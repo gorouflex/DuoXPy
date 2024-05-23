@@ -17,7 +17,9 @@
   <a href="#disclaimer">Disclaimer</a>
 </p>
 <p align="center">
-  <img alt="GitHub issues" src="https://img.shields.io/github/issues/gorouflex/DuoXPy?style=flat">
+
+ ![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/gorouflex/DuoXPy/total)
+
 </p>
 
 #
