@@ -1,8 +1,3 @@
-# --------------------------- #
-# Made by GorouFlex           #
-# Ported from rfoal/duolingo  #
-# Version 1.8                 #
-# --------------------------- #
 import os
 import requests
 import json
@@ -24,10 +19,10 @@ class colors:
     UNDERLINE = '\033[4m'
     WHITE = '\033[97m'
 
-# Define where and the name for Config folder and some assset
-config_path: str = f'config.ini'
+# Define where and the name for Config folder and some asset
+config_path = 'config.ini'
 
-config: ConfigParser = ConfigParser()
+config = ConfigParser()
 config.read(config_path)
 
 # Print information window
@@ -45,48 +40,63 @@ print(f"{colors.WHITE}Starting DuoXPy{colors.ENDC}")
 print(f"{colors.WHITE}Collecting information...{colors.ENDC}")
 
 # Take token information and save it to config
-def create_config() -> None:
+def create_config():
     config.add_section('User')
     config.set('User', 'TOKEN', "")
     token = input(f"{colors.WHITE}Token: {colors.ENDC}")
-    config.set('User', 'TOKEN', f"{token}")
+    config.set('User', 'TOKEN', token)
     lessons = input(f"{colors.WHITE}Lesson: {colors.ENDC}")
-    config.set('User', 'LESSONS', f"{lessons}")
+    config.set('User', 'LESSONS', lessons)
+    timer = input(f"{colors.WHITE}Timer (e.g., 2m for 2 minutes): {colors.ENDC}")
+    config.set('User', 'TIMER', timer)
     with open(config_path, 'w', encoding='utf-8') as configfile:
-        configfile.truncate(0)
-        configfile.seek(0)
         config.write(configfile)
 
-# Check if Config it's exist or not?
-def check_config_integrity() -> None:
+# Check if Config exists
+def check_config_integrity():
     if not os.path.isfile(config_path) or os.stat(config_path).st_size == 0:
         create_config()
         return
     
     config.read(config_path)
     
-    if not config.has_section('User') or not config.has_option('User', 'TOKEN') or not config.has_option('User', 'LESSONS'):
+    if not config.has_section('User') or not config.has_option('User', 'TOKEN') or not config.has_option('User', 'LESSONS') or not config.has_option('User', 'TIMER'):
         create_config()
 
 check_config_integrity()
 config.read(config_path)
 
-# Take token from config
-
+# Take token and timer from config
 try:
     token = config.get('User', 'TOKEN')
     lessons = config.get('User', 'LESSONS')
+    timer = config.get('User', 'TIMER')
 except:
     create_config()
 
-# Configure headers for futher request
+# Parse timer value
+def parse_timer(timer_str):
+    if timer_str.endswith('m'):
+        return int(timer_str[:-1]) * 60
+    elif timer_str.endswith('s'):
+        return int(timer_str[:-1])
+    else:
+        raise ValueError("Invalid timer format. Use 'Xm' for minutes or 'Xs' for seconds.")
+
+try:
+    wait_time = parse_timer(timer)
+except ValueError as e:
+    print(f"{colors.FAIL}{e}{colors.ENDC}")
+    exit(-1)
+
+# Configure headers for further requests
 headers = {
     'Content-Type': 'application/json',
     'Authorization': f'Bearer {token}',
     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
 }
 
-# Token processing 
+# Token processing
 try:
     jwt_token = token.split('.')[1]
 except:
@@ -111,7 +121,7 @@ try:
     xpGains = data['xpGains']
     skillId = xpGains[0]['skillId']
 except:
-    print(f"{colors.FAIL}Your Duolingo account has been banned/does not exist or you didn't do any lesson, please do atleats 1 lesson{colors.ENDC}")
+    print(f"{colors.FAIL}Your Duolingo account has been banned/does not exist or you didn't do any lesson, please do at least 1 lesson{colors.ENDC}")
     exit(-1)
 
 skillId = next(
@@ -125,7 +135,7 @@ if skillId is None:
     print(f"{colors.FAIL}{colors.WARNING}--------- Traceback log ---------{colors.ENDC}\nNo skillId found in xpGains\nPlease do at least 1 or some lessons in your skill tree\nVisit https://github.com/gorouflex/DuoXPy#how-to-fix-error-500---no-skillid-found-in-xpgains for more information{colors.ENDC}")
     exit(1)
 
-# Do a loop and start make request to gain xp
+# Do a loop and start making requests to gain XP
 for i in range(int(lessons)):
     session_data = {
         'challengeTypes': [
@@ -186,7 +196,7 @@ for i in range(int(lessons)):
     elif session_response.status_code != 200:
          print(f"{colors.FAIL}Session Error: {session_response.status_code}, {session_response.text}{colors.ENDC}")
          continue
-    session = session_response.json()
+    session = session_response.json() 
 
     end_response = requests.put(
         f"https://www.duolingo.com/{date}/sessions/{session['id']}",
@@ -218,6 +228,9 @@ for i in range(int(lessons)):
          print(f"{colors.FAIL}Response Error: {response.status_code}, {response.text}{colors.ENDC}")
          continue
     print(f"{colors.OKGREEN}[{i+1}] - {end_data['xpGain']} XP{colors.ENDC}")
+
+    # Wait before next request
+    time.sleep(wait_time)
 
 # Delete Config folder after running done on GitHub Actions (idk if it's useful or not)
 if os.getenv('GITHUB_ACTIONS') == 'true':
