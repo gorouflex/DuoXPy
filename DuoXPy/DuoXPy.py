@@ -19,7 +19,8 @@ class colors:
     UNDERLINE = '\033[4m'
     WHITE = '\033[97m'
 
-# Define where and the name for Config folder and some asset
+# Define where and the name for Config folder and some assets
+LOCAL_VERSION = '1.9.0'
 config_path = 'config.ini'
 
 config = ConfigParser()
@@ -28,6 +29,7 @@ config.read(config_path)
 # Print information window
 print(f"{colors.WARNING}------- Welcome to DuoXPy -------{colors.ENDC}")
 print(f"{colors.OKBLUE}Made by GFx{colors.ENDC}")
+print(f"{colors.OKBLUE}Version: {LOCAL_VERSION} {colors.ENDC}")
 try:
    lessons = config.get('User', 'LESSONS')
    print(f"{colors.WARNING}Lessons: {lessons}{colors.ENDC}")
@@ -81,7 +83,7 @@ def parse_timer(timer_str):
     elif timer_str.endswith('s'):
         return int(timer_str[:-1])
     else:
-        raise ValueError("Invalid timer format. Use 'Xm' for minutes or 'Xs' for seconds.")
+        raise ValueError("Invalid timer format. Use 'Xm' for minutes or 'Xs' for seconds, where 'X' is a number")
 
 try:
     wait_time = parse_timer(timer)
@@ -138,46 +140,64 @@ if skillId is None:
 # Do a loop and start making requests to gain XP
 for i in range(int(lessons)):
     session_data = {
-        'challengeTypes': [
-            'assist',
-            'characterIntro',
-            'characterMatch',
-            'characterPuzzle',
-            'characterSelect',
-            'characterTrace',
-            'completeReverseTranslation',
-            'definition',
-            'dialogue',
-            'form',
-            'freeResponse',
-            'gapFill',
-            'judge',
-            'listen',
-            'listenComplete',
-            'listenMatch',
-            'match',
-            'name',
-            'listenComprehension',
-            'listenIsolation',
-            'listenTap',
-            'partialListen',
-            'partialReverseTranslate',
-            'readComprehension',
-            'select',
-            'selectPronunciation',
-            'selectTranscription',
-            'syllableTap',
-            'syllableListenTap',
-            'speak',
-            'tapCloze',
-            'tapClozeTable',
-            'tapComplete',
-            'tapCompleteTable',
-            'tapDescribe',
-            'translate',
-            'typeCloze',
-            'typeClozeTable',
-            'typeCompleteTable',
+     'challengeTypes':[
+        'assist',
+        'characterIntro',
+        'characterMatch',
+        'characterPuzzle',
+        'characterSelect',
+        'characterTrace',
+        'characterWrite',
+        'completeReverseTranslation',
+        'definition',
+        'dialogue',
+        'extendedMatch',
+        'extendedListenMatch',
+        'form',
+        'freeResponse',
+        'gapFill',
+        'judge',
+        'listen',
+        'listenComplete',
+        'listenMatch',
+        'match',
+        'name',
+        'listenComprehension',
+        'listenIsolation',
+        'listenSpeak',
+        'listenTap',
+        'orderTapComplete',
+        'partialListen',
+        'partialReverseTranslate',
+        'patternTapComplete',
+        'radioBinary',
+        'radioImageSelect',
+        'radioListenMatch',
+        'radioListenRecognize',
+        'radioSelect',
+        'readComprehension',
+        'reverseAssist',
+        'sameDifferent',
+        'select',
+        'selectPronunciation',
+        'selectTranscription',
+        'svgPuzzle',
+        'syllableTap',
+        'syllableListenTap',
+        'speak',
+        'tapCloze',
+        'tapClozeTable',
+        'tapComplete',
+        'tapCompleteTable',
+        'tapDescribe',
+        'translate',
+        'transliterate',
+        'transliterationAssist',
+        'typeCloze',
+        'typeClozeTable',
+        'typeComplete',
+        'typeCompleteTable',
+        'writeComprehension',
         ],
         'fromLanguage': fromLanguage,
         'isFinalLevel': False,
@@ -186,17 +206,16 @@ for i in range(int(lessons)):
         'learningLanguage': learningLanguage,
         'skillId': skillId,
         'smartTipsVersion': 2,
-        'type': 'SPEAKING_PRACTICE',
+        'type': 'GLOBAL_PRACTICE',
     }
-
     session_response = requests.post(f'https://www.duolingo.com/{date}/sessions', json=session_data, headers=headers)
     if session_response.status_code == 500:
-         print(f"{colors.FAIL}Session Error 500 / No skillId found in xpGains or Missing some element to make a request\nPlease do at least 1 or some lessons in your skill tree\nVisit https://github.com/gorouflex/DuoXPy#how-to-fix-error-500---no-skillid-found-in-xpgains for more information{colors.ENDC}")
-         continue
+        print(f"{colors.FAIL}Session Error 500 / No skillId found in xpGains or Missing some element to make a request\nPlease do at least 1 or some lessons in your skill tree\nVisit https://github.com/gorouflex/DuoXPy#how-to-fix-error-500---no-skillid-found-in-xpgains for more information{colors.ENDC}")
+        continue
     elif session_response.status_code != 200:
-         print(f"{colors.FAIL}Session Error: {session_response.status_code}, {session_response.text}{colors.ENDC}")
-         continue
-    session = session_response.json() 
+        print(f"{colors.FAIL}Session Error: {session_response.status_code}, {session_response.text}{colors.ENDC}")
+        continue
+    session = session_response.json()
 
     end_response = requests.put(
         f"https://www.duolingo.com/{date}/sessions/{session['id']}",
