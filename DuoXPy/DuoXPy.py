@@ -1,258 +1,272 @@
 import os
-import requests
 import json
 import base64
+import configparser
 import time
-import shutil
-from configparser import ConfigParser
 from datetime import datetime
+import http.client
+import urllib.parse
+import webbrowser
 
-class colors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    WHITE = '\033[97m'
+current_dir = os.path.dirname(os.path.realpath(__file__))
+CONFIG_FILE = os.path.join(current_dir, 'config.ini')
+VERSION = '2.0.0'
+GITHUB_REPO = 'gorouflex/DuoXPy' 
+config = configparser.ConfigParser()
+config.read(CONFIG_FILE)
 
-# Define where and the name for Config folder and some assets
-LOCAL_VERSION = '1.9.5'
-config_path = 'config.ini'
+def clear():
+    os.system("cls" if os.name == "nt" else "clear")
+    print(r"""  ___          __  _____      
+ |   \ _  _ ___\ \/ / _ \_  _ 
+ | |) | || / _ \>  <|  _/ || |
+ |___/ \_,_\___/_/\_\_|  \_, |
+                         |__/ """)
+    print(f"Version {VERSION}")
+    print()
 
-config = ConfigParser()
-config.read(config_path)
-
-# Print information window
-print(f"{colors.OKGREEN}------- Welcome to DuoXPy -------{colors.ENDC}")
-print(f"{colors.OKGREEN}Made by GFx{colors.ENDC}")
-print(f"{colors.WHITE}Codename: Sandy{colors.ENDC}")
-print(f"{colors.OKBLUE}Version: {LOCAL_VERSION} {colors.ENDC}")
-try:
-   lessons = config.get('User', 'LESSONS')
-   print(f"{colors.WARNING}Lessons: {lessons}{colors.ENDC}")
-except:
-   print(f"{colors.WARNING}Lessons: N/A{colors.ENDC}")
-try:
-   wait = config.get('User', 'TIMER')
-   print(f"{colors.WARNING}Wait time between each requests: {wait}{colors.ENDC}")
-except:
-   print(f"{colors.WARNING}Wait time between each requests: N/A{colors.ENDC}")
-print(f"{colors.WHITE}Config file:", os.path.join(os.getcwd(), f"{colors.WHITE}config.ini{colors.ENDC}"))
-print(f"{colors.WARNING}---------------------------------{colors.ENDC}")
-print(f"{colors.WHITE}Starting DuoXPy{colors.ENDC}")
-print(f"{colors.WHITE}Collecting information...{colors.ENDC}")
-
-# Take token information and save it to config
 def create_config():
-    config.add_section('User')
-    config.set('User', 'TOKEN', "")
-    token = input(f"{colors.WHITE}Token: {colors.ENDC}")
-    config.set('User', 'TOKEN', token)
-    lessons = input(f"{colors.WHITE}Lesson: {colors.ENDC}")
-    config.set('User', 'LESSONS', lessons)
-    timer = input(f"{colors.WHITE}Timer (e.g., 2m for 2 minutes, 3s for 3 seconds): {colors.ENDC}")
-    config.set('User', 'TIMER', timer)
-    with open(config_path, 'w', encoding='utf-8') as configfile:
+    clear()
+    print("Configuration file not found or empty. Please enter the following details:")
+    print()
+    duolingo_jwt = input("Enter your Duolingo JWT: ")
+    lessons = input("Enter the number of lessons: ")
+    timer_interval = input("Enter the timer interval (e.g., 10s for 10 seconds, 5m for 5 minutes): ")
+    skip_welcome = input("Skip Welcome? (y/n): ")
+    config['Settings'] = {
+        'DUOLINGO_JWT': duolingo_jwt,
+        'LESSONS': lessons,
+        'TIMER_INTERVAL': timer_interval,
+        'SKIP_WELCOME': skip_welcome
+    }
+
+    with open(CONFIG_FILE, 'w') as configfile:
         config.write(configfile)
 
-# Check if Config exists
-def check_config_integrity():
-    if not os.path.isfile(config_path) or os.stat(config_path).st_size == 0:
-        create_config()
-        return
+def read_config():
+    return config['Settings']
+
+def update_settings():    
+    clear()
+    print("Press Enter and leave nothing if nothing changes")
+    print()
+    duolingo_jwt = input(f"Enter your Duolingo JWT [{config['Settings']['DUOLINGO_JWT']}]: ") or config['Settings']['DUOLINGO_JWT']
+    lessons = input(f"Enter the number of lessons [{config['Settings']['LESSONS']}]: ") or config['Settings']['LESSONS']
+    timer_interval = input(f"Enter the timer interval [{config['Settings']['TIMER_INTERVAL']}]: ") or config['Settings']['TIMER_INTERVAL']
+    skip_welcome = input(f"Skip Welcome? [{config['Settings']['SKIP_WELCOME']}]: ") or config['Settings']['SKIP_WELCOME']
     
-    config.read(config_path)
-    
-    if not config.has_section('User') or not config.has_option('User', 'TOKEN') or not config.has_option('User', 'LESSONS') or not config.has_option('User', 'TIMER'):
-        create_config()
+    config['Settings']['DUOLINGO_JWT'] = duolingo_jwt
+    config['Settings']['LESSONS'] = lessons
+    config['Settings']['TIMER_INTERVAL'] = timer_interval
+    config['Settings']['SKIP_WELCOME'] = skip_welcome
 
-check_config_integrity()
-config.read(config_path)
+    with open(CONFIG_FILE, 'w') as configfile:
+        config.write(configfile)
 
-# Take token and timer from config
-try:
-    token = config.get('User', 'TOKEN')
-    lessons = config.get('User', 'LESSONS')
-    timer = config.get('User', 'TIMER')
-except:
-    create_config()
-
-# Parse timer value
 def parse_timer(timer_str):
-    if timer_str.endswith('m'):
-        return int(timer_str[:-1]) * 60
-    elif timer_str.endswith('s'):
+    if timer_str[-1] == 's':
         return int(timer_str[:-1])
+    elif timer_str[-1] == 'm':
+        return int(timer_str[:-1]) * 60
     else:
-        raise ValueError(f"{colors.FAIL}Invalid timer format. Use 'Xm' for minutes or 'Xs' for seconds, where 'X' is a number{colors.ENDC}")
+        raise ValueError("Invalid timer format. Use 'Xs' for seconds or 'Xm' for minutes.")
 
-try:
-    wait_time = parse_timer(timer)
-except ValueError as e:
-    print(f"{colors.FAIL}{e}{colors.ENDC}")
-    exit(-1)
+def decode_jwt(jwt):
+    _, payload, _ = jwt.split('.')
+    decoded = base64.urlsafe_b64decode(payload + "==")
+    return json.loads(decoded)
 
-# Configure headers for further requests
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Bearer {token}',
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
-}
+def http_request(method, url, headers=None, body=None):
+    parsed_url = urllib.parse.urlparse(url)
+    conn = http.client.HTTPSConnection(parsed_url.netloc)
+    conn.request(method, parsed_url.path + ('?' + parsed_url.query if parsed_url.query else ''), body, headers)
+    response = conn.getresponse()
+    data = response.read().decode('utf-8')
+    conn.close()
+    return response.status, data
 
-# Token processing
-try:
-    jwt_token = token.split('.')[1]
-except:
-    print(f"{colors.WARNING}--------- Traceback log ---------{colors.ENDC}\n{colors.FAIL}❌ Invalid token{colors.ENDC}")
-    exit(-1)
-
-padding = '=' * (4 - len(jwt_token) % 4)
-sub = json.loads(base64.b64decode(jwt_token + padding).decode())
-
-# Collect date and insert to the API
-date = datetime.now().strftime('%Y-%m-%d')
-print(f"{colors.WARNING}Date: {date}{colors.ENDC}")
-response = requests.get(
-    f"https://www.duolingo.com/{date}/users/{sub['sub']}?fields=fromLanguage,learningLanguage,xpGains",
-    headers=headers,
-)
-data = response.json()
-# Take element required to make a request
-fromLanguage = data['fromLanguage']
-learningLanguage = data['learningLanguage']
-try:
-    xpGains = data['xpGains']
-    skillId = xpGains[0]['skillId']
-except:
-    print(f"{colors.FAIL}Your Duolingo account has been banned/does not exist or you didn't do any lesson, please do at least 1 lesson{colors.ENDC}")
-    exit(-1)
-
-skillId = next(
-    (xpGain['skillId'] for xpGain in reversed(xpGains) if 'skillId' in xpGain),
-    None,
-)
-print(f"{colors.WHITE}From (Language): {fromLanguage}{colors.ENDC}")
-print(f"{colors.WHITE}Learning (Language): {learningLanguage}{colors.ENDC}")
-num = 0
-# Do a loop and start making requests to gain XP
-for i in range(int(lessons)):
-    session_data = {
-     'challengeTypes':[
-        'assist',
-        'characterIntro',
-        'characterMatch',
-        'characterPuzzle',
-        'characterSelect',
-        'characterTrace',
-        'characterWrite',
-        'completeReverseTranslation',
-        'definition',
-        'dialogue',
-        'extendedMatch',
-        'extendedListenMatch',
-        'form',
-        'freeResponse',
-        'gapFill',
-        'judge',
-        'listen',
-        'listenComplete',
-        'listenMatch',
-        'match',
-        'name',
-        'listenComprehension',
-        'listenIsolation',
-        'listenSpeak',
-        'listenTap',
-        'orderTapComplete',
-        'partialListen',
-        'partialReverseTranslate',
-        'patternTapComplete',
-        'radioBinary',
-        'radioImageSelect',
-        'radioListenMatch',
-        'radioListenRecognize',
-        'radioSelect',
-        'readComprehension',
-        'reverseAssist',
-        'sameDifferent',
-        'select',
-        'selectPronunciation',
-        'selectTranscription',
-        'svgPuzzle',
-        'syllableTap',
-        'syllableListenTap',
-        'speak',
-        'tapCloze',
-        'tapClozeTable',
-        'tapComplete',
-        'tapCompleteTable',
-        'tapDescribe',
-        'translate',
-        'transliterate',
-        'transliterationAssist',
-        'typeCloze',
-        'typeClozeTable',
-        'typeComplete',
-        'typeCompleteTable',
-        'writeComprehension',
-        ],
-        'fromLanguage': fromLanguage,
-        'isFinalLevel': False,
-        'isV2': True,
-        'juicy': True,
-        'learningLanguage': learningLanguage,
-        'skillId': skillId,
-        'smartTipsVersion': 2,
-        'type': 'GLOBAL_PRACTICE',
+def get_latest_ver():
+    headers = {
+        "User-Agent": "Mozilla/5.0"
     }
-    session_response = requests.post(f'https://www.duolingo.com/{date}/sessions', json=session_data, headers=headers)
-    if session_response.status_code == 500:
-        print(f"{colors.FAIL}Session Error 500 / No skillId found in xpGains or Missing some element to make a request\nPlease do at least 1 or some lessons in your skill tree\nVisit https://github.com/gorouflex/DuoXPy#how-to-fix-error-500---no-skillid-found-in-xpgains for more information{colors.ENDC}")
-        continue
-    elif session_response.status_code != 200:
-        print(f"{colors.FAIL}Session Error: {session_response.status_code}, {session_response.text}{colors.ENDC}")
-        continue
-    session = session_response.json()
+    status, data = http_request("GET", f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest", headers)
+    if status == 200:
+        release_info = json.loads(data)
+        return release_info['tag_name']
+    else:
+        raise Exception("Failed to fetch the latest version from GitHub")
 
-    end_response = requests.put(
-        f"https://www.duolingo.com/{date}/sessions/{session['id']}",
-        headers=headers,
-        json={
-            **session,
-            'heartsLeft': 0,
-            'startTime': (time.time() - 60),
-            'enableBonusPoints': False,
-            'endTime': time.time(),
-            'failed': False,
-            'maxInLessonStreak': 9,
-            'shouldLearnThings': True,
-        },
-    )
+def check_updates():
+    LOCAL_VERSION = VERSION
+    max_retries = 10
+    skip_update_check = False
+    
+    for i in range(max_retries):
+        try:
+            latest_version = get_latest_ver()
+            break
+        except:
+            if i < max_retries - 1:
+                print(f"Failed to fetch latest version. Retrying {i+1}/{max_retries}...")
+                time.sleep(5)
+            else:
+                clear()
+                print("Failed to fetch latest version")
+                result = input("Do you want to skip the check for updates? (y/n): ").lower().strip()
+                if result == "y":
+                    skip_update_check = True
+                else:
+                    print("Quitting...")
+                    raise SystemExit
+
+    if not skip_update_check:
+        if LOCAL_VERSION < latest_version:
+            clear()
+            print(f"New version available: {latest_version}. Please update the script.")
+            raise SystemExit
+        elif LOCAL_VERSION > latest_version:
+            clear()
+            print("Welcome to the DuoXPy Beta Program")
+            print("This beta build may not work as expected and is only for testing purposes!")
+            result = input("Do you want to continue (y/n): ").lower().strip()
+            if result != "y":
+                print("Quitting...")
+                raise SystemExit
+
+def about():
+    options = {
+        "1": lambda: webbrowser.open("https://www.github.com/AppleOSX/UXTU4Unix"),
+        "b": "break",
+    }
+    while True:
+        clear()
+        print("About DuoXPy")
+        print("The New Hope Update (2NewHopeL2T)")
+        print("----------------------------")
+        print("Maintainer: GorouFlex\nCLI: GorouFlex")
+        print("----------------------------")
+        print("\nB. Back")
+        choice = input("Option: ").lower().strip()
+        action = options.get(choice, None)
+        if action is None:
+            print("Invalid option.")
+            input("Press Enter to continue...")
+        elif action == "break":
+            break
+        else:
+            action()
+
+def run():
+    clear()
+    config = read_config()
+    duolingo_jwt = config['DUOLINGO_JWT']
+    lessons = int(config['LESSONS'])
+    timer_interval = parse_timer(config['TIMER_INTERVAL'])
+    skip_welcome = config['SKIP_WELCOME']
+    print(f"Current configuration:\nLessons: {lessons}, Timer Interval: {config['TIMER_INTERVAL']}, Skip Welcome: {skip_welcome}")
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {duolingo_jwt}",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+    }
 
     try:
-        end_data = end_response.json()
-    except json.decoder.JSONDecodeError as e:
-        print(f"{colors.FAIL}Error decoding JSON: {e}{colors.ENDC}")
-        print(f"Response content: {end_response.text}")
-        continue
+        sub = decode_jwt(duolingo_jwt)['sub']
+        user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
+        status, user_info_data = http_request("GET", user_info_url, headers)
+        if status == 500:
+            print("❌ SkillID error. Server returned status code 500.")
+            pass
+        user_info = json.loads(user_info_data)
+        fromLanguage = user_info['fromLanguage']
+        learningLanguage = user_info['learningLanguage']
+        xp = 0
+        for _ in range(lessons):
+            session_payload = json.dumps({
+                "challengeTypes": [
+                    "assist", "characterIntro", "characterMatch", "characterPuzzle",
+                    "characterSelect", "characterTrace", "characterWrite",
+                    "completeReverseTranslation", "definition", "dialogue",
+                    "extendedMatch", "extendedListenMatch", "form", "freeResponse",
+                    "gapFill", "judge", "listen", "listenComplete", "listenMatch",
+                    "match", "name", "listenComprehension", "listenIsolation",
+                    "listenSpeak", "listenTap", "orderTapComplete", "partialListen",
+                    "partialReverseTranslate", "patternTapComplete", "radioBinary",
+                    "radioImageSelect", "radioListenMatch", "radioListenRecognize",
+                    "radioSelect", "readComprehension", "reverseAssist",
+                    "sameDifferent", "select", "selectPronunciation",
+                    "selectTranscription", "svgPuzzle", "syllableTap",
+                    "syllableListenTap", "speak", "tapCloze", "tapClozeTable",
+                    "tapComplete", "tapCompleteTable", "tapDescribe", "translate",
+                    "transliterate", "transliterationAssist", "typeCloze",
+                    "typeClozeTable", "typeComplete", "typeCompleteTable",
+                    "writeComprehension"
+                ],
+                "fromLanguage": fromLanguage,
+                "isFinalLevel": False,
+                "isV2": True,
+                "juicy": True,
+                "learningLanguage": learningLanguage,
+                "smartTipsVersion": 2,
+                "type": "GLOBAL_PRACTICE"
+            })
+            session_url = "https://www.duolingo.com/2017-06-30/sessions"
+            status, session_data = http_request("POST", session_url, headers, session_payload)
+            session = json.loads(session_data)
+            update_payload = json.dumps({
+                **session,
+                "heartsLeft": 0,
+                "startTime": (datetime.now().timestamp() - 60),
+                "enableBonusPoints": False,
+                "endTime": datetime.now().timestamp(),
+                "failed": False,
+                "maxInLessonStreak": 9,
+                "shouldLearnThings": True
+            })
+            update_url = f"https://www.duolingo.com/2017-06-30/sessions/{session['id']}"
+            status, response_data = http_request("PUT", update_url, headers, update_payload)
+            response = json.loads(response_data)
+            xp += response['xpGain']
+            z = response['xpGain']
+            print(f"[{_+1}] - {z} XP")
+            time.sleep(timer_interval)
+                           
 
-    response = requests.put(f'https://www.duolingo.com/{date}/sessions/{session["id"]}', data=json.dumps(end_data), headers=headers)
-    if response.status_code == 500:
-         print(f"{colors.FAIL}Response Error 500 / No skillId found in xpGains or Missing some element to make a request\nPlease do at least 1 or some lessons in your skill tree\nVisit https://github.com/gorouflex/DuoXPy#how-to-fix-error-500---no-skillid-found-in-xpgains for more information{colors.ENDC}")
-         continue
-    elif response.status_code != 200:
-         print(f"{colors.FAIL}Response Error: {response.status_code}, {response.text}{colors.ENDC}")
-         continue
-    print(f"{colors.OKGREEN}[{i+1}] - {end_data['xpGain']} XP{colors.ENDC}")
-    num = num + 1
-    # Wait before next request
-    time.sleep(wait_time)
+        print(f"🎉 You won {xp} XP")
+        input("Press Enter to continue.")
+    except Exception as error:
+        print("❌ Something went wrong")
+        print(str(error))
+        input("Press Enter to continue.")
 
-xp = num*10
-print()
-print(f"{colors.OKBLUE}You earned {xp} XP and completed {num} practices{colors.ENDC}")
-print(f"{colors.WHITE}Closing DuoXPy ✅{colors.ENDC}")
+def main():
+    check_updates()
+    if not os.path.exists(CONFIG_FILE) or os.stat(CONFIG_FILE).st_size == 0:
+        create_config()
+    if config.get('Settings', 'SKIP_WELCOME', fallback='n').lower().strip() == 'y':
+        run()
+    else:  
+      while True:
+        clear()
+        print("1. Start DuoXPy")
+        print("2. Settings")
+        print()
+        print("A. About")
+        print("E. Exit")
+        print()
+        choice = input("Option: ")
+        if choice == '1':
+            run()
+        elif choice == '2':
+            update_settings()
+        elif choice.lower() == 'a':
+            about()
+        elif choice.lower() == 'e':
+            break
+        else:
+            print("Invalid choice. Please try again.")
+            input("Press Enter to continue.")
+
+if __name__ == "__main__":
+    main()
