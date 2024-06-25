@@ -1,3 +1,8 @@
+## [1.9.5]
+
+- Remove `skillID` checks; the session and response code will handle them automatically.
+- Fix any uncolored lines.
+- Include an info line about the timer
 ## [1.9.0]
 
 - Added a custom timer input to control the delay between requests.
