@@ -20,23 +20,28 @@ class colors:
     WHITE = '\033[97m'
 
 # Define where and the name for Config folder and some assets
-LOCAL_VERSION = '1.9.0'
+LOCAL_VERSION = '1.9.5'
 config_path = 'config.ini'
 
 config = ConfigParser()
 config.read(config_path)
 
 # Print information window
-print(f"{colors.WARNING}------- Welcome to DuoXPy -------{colors.ENDC}")
-print(f"{colors.OKBLUE}Made by GFx{colors.ENDC}")
+print(f"{colors.OKGREEN}------- Welcome to DuoXPy -------{colors.ENDC}")
+print(f"{colors.OKGREEN}Made by GFx{colors.ENDC}")
+print(f"{colors.WHITE}Codename: Sandy{colors.ENDC}")
 print(f"{colors.OKBLUE}Version: {LOCAL_VERSION} {colors.ENDC}")
 try:
    lessons = config.get('User', 'LESSONS')
    print(f"{colors.WARNING}Lessons: {lessons}{colors.ENDC}")
 except:
    print(f"{colors.WARNING}Lessons: N/A{colors.ENDC}")
-print(f"{colors.WHITE}Codename: Sandy{colors.ENDC}")
-print(f"{colors.WHITE}Config folder:", os.path.join(os.getcwd(), f"{colors.WHITE}Config{colors.ENDC}"))
+try:
+   wait = config.get('User', 'TIMER')
+   print(f"{colors.WARNING}Wait time between each requests: {wait}{colors.ENDC}")
+except:
+   print(f"{colors.WARNING}Wait time between each requests: N/A{colors.ENDC}")
+print(f"{colors.WHITE}Config file:", os.path.join(os.getcwd(), f"{colors.WHITE}config.ini{colors.ENDC}"))
 print(f"{colors.WARNING}---------------------------------{colors.ENDC}")
 print(f"{colors.WHITE}Starting DuoXPy{colors.ENDC}")
 print(f"{colors.WHITE}Collecting information...{colors.ENDC}")
@@ -49,7 +54,7 @@ def create_config():
     config.set('User', 'TOKEN', token)
     lessons = input(f"{colors.WHITE}Lesson: {colors.ENDC}")
     config.set('User', 'LESSONS', lessons)
-    timer = input(f"{colors.WHITE}Timer (e.g., 2m for 2 minutes): {colors.ENDC}")
+    timer = input(f"{colors.WHITE}Timer (e.g., 2m for 2 minutes, 3s for 3 seconds): {colors.ENDC}")
     config.set('User', 'TIMER', timer)
     with open(config_path, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
@@ -83,7 +88,7 @@ def parse_timer(timer_str):
     elif timer_str.endswith('s'):
         return int(timer_str[:-1])
     else:
-        raise ValueError("Invalid timer format. Use 'Xm' for minutes or 'Xs' for seconds, where 'X' is a number")
+        raise ValueError(f"{colors.FAIL}Invalid timer format. Use 'Xm' for minutes or 'Xs' for seconds, where 'X' is a number{colors.ENDC}")
 
 try:
     wait_time = parse_timer(timer)
@@ -130,13 +135,9 @@ skillId = next(
     (xpGain['skillId'] for xpGain in reversed(xpGains) if 'skillId' in xpGain),
     None,
 )
-print(f"From (Language): {fromLanguage}")
-print(f"Learning (Language): {learningLanguage}")
-
-if skillId is None:
-    print(f"{colors.FAIL}{colors.WARNING}--------- Traceback log ---------{colors.ENDC}\nNo skillId found in xpGains\nPlease do at least 1 or some lessons in your skill tree\nVisit https://github.com/gorouflex/DuoXPy#how-to-fix-error-500---no-skillid-found-in-xpgains for more information{colors.ENDC}")
-    exit(1)
-
+print(f"{colors.WHITE}From (Language): {fromLanguage}{colors.ENDC}")
+print(f"{colors.WHITE}Learning (Language): {learningLanguage}{colors.ENDC}")
+num = 0
 # Do a loop and start making requests to gain XP
 for i in range(int(lessons)):
     session_data = {
@@ -247,17 +248,11 @@ for i in range(int(lessons)):
          print(f"{colors.FAIL}Response Error: {response.status_code}, {response.text}{colors.ENDC}")
          continue
     print(f"{colors.OKGREEN}[{i+1}] - {end_data['xpGain']} XP{colors.ENDC}")
-
+    num = num + 1
     # Wait before next request
     time.sleep(wait_time)
 
-# Delete Config folder after running done on GitHub Actions (idk if it's useful or not)
-if os.getenv('GITHUB_ACTIONS') == 'true':
-    try:
-      shutil.rmtree(config_folder)
-      print(f"{colors.WARNING}Cleaning up..{colors.ENDC}")
-    except Exception as e:
-      print(f"{colors.FAIL}Error deleting config folder: {e}{colors.ENDC}")
-      exit(-1)
-
-print("Closing DuoXPy ✅")
+xp = num*10
+print()
+print(f"{colors.OKBLUE}You earned {xp} XP and completed {num} practices{colors.ENDC}")
+print(f"{colors.WHITE}Closing DuoXPy ✅{colors.ENDC}")
