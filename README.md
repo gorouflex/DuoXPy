@@ -1,6 +1,6 @@
 <picture><img align="left" src="https://github.com/gorouflex/Sandy/blob/main/Img/DuoXPy/duo.svg" width="20%"/></picture>
 <h1>DuoXPy - Project Sandy</h1>
-<h3>⚡️ XP farm and Streak keeper for Duolingo</h3>
+<h3>⚡️ XP farm for Duolingo 🔥</h3>
 <h4>Powered by Python 🐍</h5>
 
 #
@@ -18,28 +18,22 @@
 </p>
 <p align="center">
 
- ![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/gorouflex/DuoXPy/total)
 
 </p>
 
 #
-
-### ⚠️ This repository is still in its early stages and may not work as expected for some accounts, please try completing at least 9 lessons and run it again after 2-3 days ⚠️, <a href="#how-to-fix-error-500---no-skillid-found-in-xpgains">fix here</a>     
-
-### Belongs to the Sandy Project
-
-- [Sandy](https://github.com/gorouflex/Sandy/) ( Official Documents and Information Repository for Project Sandy )
-- [DuoXPy](https://github.com/gorouflex/DuoXPy/) ( ⚡️ XP farm and Streak keeper for Duolingo 🔥 )
   
 > [!IMPORTANT]
 > **Read all** documents in this repo before doing anything!
 > 
 > Don't forget to star ⭐ this repository
-  
+
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/gorouflex/DuoXPy/total)
+
 # Feature 
 
 - XP farm ⚡️
-- Streak keeper 🔥
+- Streak keeper 🔥 [You must have some skill set up to call a Python file every day]
 
 # Usage 
 
@@ -61,8 +55,6 @@ document.cookie
 
 > [!IMPORTANT]
 > Usually, if you enter a lot of lessons ( like >1000 ) or if Duolingo cannot handle the request, you will receive an error code or log, and the lesson will be skipped. So, think wisely before entering the lesson!
-> 
-> If you got `No skillId found in xpGains` log then try to do least 1 lesson so it can run back to normal!
 
 ## How to fix `Error 500 - No SkillID found in xpGains`?
 
@@ -99,4 +91,4 @@ document.cookie
 > - This repo is only for education purposes! 
 ### Special thanks to 💖
 - [rfoal](https://github.com/rfoel/) x [duolingo](https://github.com/rfoel/duolingo) for the source code and idea
-- [ESSTX](https://github.com/ESSTX) for xpGains fixes [PR #1](https://github.com/gorouflex/DuoXPy/pull/1), [PR #2](https://github.com/gorouflex/DuoXPy/pull/2)
+- [ESSTX](https://github.com/ESSTX) for xpGains fixes [PR #1](https://github.com/gorouflex/DuoXPy/pull/1), [PR #2](https://github.com/gorouflex/DuoXPy/pull/2) [OLD]
