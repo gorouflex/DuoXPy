@@ -1,3 +1,12 @@
+## [2.0.0]
+
+- Rewrite the entire code
+- Add a new About and Settings page
+- Use a new method to request API data
+- Implement a new CLI (Command Line Interface)
+- Add checks for updates
+- Utilize only built-in Python modules
+### Please remember to delete the old `config.ini` file before using this version
 ## [1.9.5]
 
 - Remove `skillID` checks; the session and response code will handle them automatically.
