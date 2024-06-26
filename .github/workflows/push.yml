@@ -19,6 +19,7 @@ jobs:
       - name: Zip folders
         run: |
           zip -r DuoXPy.zip DuoXPy
+          zip -r DuoXPy-CoreEdition.zip DuoXPy-CoreEdition
         env:
             TAG: ${{ env.TAG }}
           
@@ -37,6 +38,6 @@ jobs:
           name: v${{ env.TAG }}
           tag_name: ${{ env.TAG }}
           body_path: ${{ github.workspace }}-RELEASE_NOTES.txt
-          files: DuoXPy.zip
+          files: DuoXPy.zip, DuoXPy-CoreEdition.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
