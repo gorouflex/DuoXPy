@@ -1,3 +1,10 @@
+## [2.1.0]
+
+- Remove the `Timer Interval` o stabilize each request
+- Implement proper configuration checks
+- Add a built-in updater
+- Revamp the Settings page
+- Improved error handling in the run function to continue execution even if an error occurs
 ## [2.0.0]
 
 - Rewrite the entire code
