@@ -1,3 +1,7 @@
+## [2.2.0]
+
+- Fixing some mirror bugs
+### Introducing DuoXPy Core Edition, a super lightweight version of DuoXPy, suitable for running with GitHub Actions, Docker, and for advanced users
 ## [2.1.0]
 
 - Remove the `Timer Interval` o stabilize each request
