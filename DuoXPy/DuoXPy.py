@@ -11,7 +11,7 @@ import webbrowser
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(current_dir, 'config.ini')
-VERSION = '2.1.0'
+VERSION = '2.2.0'
 GITHUB_REPO = 'gorouflex/DuoXPy' 
 config = configparser.ConfigParser()
 
@@ -22,13 +22,11 @@ def clear():
  | |) | || / _ \>  <|  _/ || |
  |___/ \_,_\___/_/\_\_|  \_, |
                          |__/ """)
-    print(f"Version {VERSION} by GorouFlex")
+    print(f"Version {VERSION} by GorouFlex - CLI")
     print()
 
 def create_config():
     clear()
-    print("Configuration file not found or empty. Please enter the following details:")
-    print()
     duolingo_jwt = input("Enter your Duolingo JWT: ")
     lessons = input("Enter the number of lessons: ")
     skip_welcome = input("Skip Welcome? (y/n): ")
@@ -142,7 +140,8 @@ def updater():
     data = response.read().decode('utf-8')
     with open(__file__, 'w', encoding='utf-8') as f:
         f.write(data)
-    print("Script updated successfully. Please restart the script.")
+    print("Script updated successfully.")
+    input("Press Enter to restart the script")
     raise SystemExit
 
 def about():
@@ -157,7 +156,7 @@ def about():
         print("----------------------------")
         print("Maintainer: GorouFlex\nCLI: GorouFlex")
         print("----------------------------")
-        print("\nB. Back")
+        print("\n1. Open GitHub repo\n\nB. Back\n")
         choice = input("Option: ").lower().strip()
         action = options.get(choice, None)
         if action is None:
@@ -185,12 +184,12 @@ def run():
         sub = decode_jwt(duolingo_jwt)['sub']
         user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
         status, user_info_data = http_request("GET", user_info_url, headers)
-        if status == 500:
-            print("❌ SkillID error. Server returned status code 500.")
-            return
         user_info = json.loads(user_info_data)
         fromLanguage = user_info['fromLanguage']
         learningLanguage = user_info['learningLanguage']
+        print(f"From (language): {fromLanguage}")
+        print(f"Learning (language): {learningLanguage}")
+        print()
         xp = 0
         for _ in range(lessons):
             try:
