@@ -86,7 +86,7 @@ class InfoWindow(ctk.CTkToplevel):
         super().__init__()
         self.main_window = main_window
         self.title('About')
-        self.geometry("325x250")
+        self.geometry("350x300")
         self.resizable(False, False)
         
         self.frame = ctk.CTkFrame(master=self)
