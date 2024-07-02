@@ -153,7 +153,6 @@ def switch_to_gui():
     latest_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/GUI/DuoXPy-GUI.py"
     response = urllib.request.urlopen(latest_url)
     data = response.read().decode('utf-8')
-    gui_file = os.path.join(current_dir, 'DuoXPy-GUI.py')
     with open(gui_file, 'w', encoding='utf-8') as f:
         f.write(data)
     print("Switched to GUI edition successfully.")
