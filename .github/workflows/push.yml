@@ -21,16 +21,15 @@ jobs:
           mv CLI DuoXPy-CLI
           mv Core DuoXPy-Core
           mv GUI DuoXPy-GUI
-          mv DuoXPy-CLI/CLI.py DuoXPy-CLI/DuoXPy.py
-          mv DuoXPy-Core/Core.py DuoXPy-Core/DuoXPy.py
-          mv DuoXPy-GUI/GUI.py DuoXPy-GUI/DuoXPy.py
+          mv DuoXPy-CLI/DuoXPy-CLI.py DuoXPy-CLI/DuoXPy.py
+          mv DuoXPy-Core/DuoXPy-Core.py DuoXPy-Core/DuoXPy.py
+          mv DuoXPy-GUI/DuoXPy-GUI.py DuoXPy-GUI/DuoXPy.py
 
       - name: Zip folders
         run: |
           zip -r DuoXPy-CLI.zip DuoXPy-CLI
           zip -r DuoXPy-Core.zip DuoXPy-Core
           zip -r DuoXPy-GUI.zip DuoXPy-GUI
-          rm -rf DuoXPy-CLI DuoXPy-Core DuoXPy-GUI
         env:
           TAG: ${{ env.TAG }}
 
