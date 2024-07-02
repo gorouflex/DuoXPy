@@ -16,13 +16,24 @@ jobs:
           LATEST_TAG="$(grep -m 1 -o '## \[.*\]' Changelog.md | awk -F'[][]' '{print $2}')"
           echo "TAG=$LATEST_TAG" >> "$GITHUB_ENV"
 
+      - name: Rename folders and files
+        run: |
+          mv CLI DuoXPy-CLI
+          mv Core DuoXPy-Core
+          mv GUI DuoXPy-GUI
+          mv DuoXPy-CLI/CLI.py DuoXPy-CLI/DuoXPy.py
+          mv DuoXPy-Core/Core.py DuoXPy-Core/DuoXPy.py
+          mv DuoXPy-GUI/GUI.py DuoXPy-GUI/DuoXPy.py
+
       - name: Zip folders
         run: |
-          zip -r DuoXPy.zip DuoXPy
-          zip -r DuoXPy-CoreEdition.zip DuoXPy-CoreEdition
+          zip -r DuoXPy-CLI.zip DuoXPy-CLI
+          zip -r DuoXPy-Core.zip DuoXPy-Core
+          zip -r DuoXPy-GUI.zip DuoXPy-GUI
+          rm -rf DuoXPy-CLI DuoXPy-Core DuoXPy-GUI
         env:
-            TAG: ${{ env.TAG }}
-          
+          TAG: ${{ env.TAG }}
+
       - id: generate-notes
         name: Generate Release Notes
         shell: bash
@@ -38,6 +49,6 @@ jobs:
           name: v${{ env.TAG }}
           tag_name: ${{ env.TAG }}
           body_path: ${{ github.workspace }}-RELEASE_NOTES.txt
-          files: DuoXPy.zip, DuoXPy-CoreEdition.zip
+          files: DuoXPy-CLI.zip, DuoXPy-Core.zip, DuoXPy-GUI.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
