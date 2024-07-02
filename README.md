@@ -51,6 +51,7 @@ document.cookie
   .split('=')[1]
 ```
   4. Copy the token without `'` ( example: 'abcde1234` -> abcde1234 )
+  5. Run `pip install -r path/to/requirements.txt` or `pip3 install -r path/to/requirements.txt`
   5. Click and run `DuoXPy.py` or using `python` or `python3` command
   6. Follow instructions	
 
