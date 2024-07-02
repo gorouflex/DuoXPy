@@ -1,3 +1,10 @@
+## [2.3.0]
+
+- Introducing: `DuoXPy GUI Edition`, a friendly user interface of `DuoXPy` for everyone
+- New progress bar
+- New `Verbose` setting
+- New option `Switch to GUI Edition` or `Switch to CLI Edition`
+- Reworked repository file structure
 ## [2.2.0]
 
 - Fixing some mirror bugs
