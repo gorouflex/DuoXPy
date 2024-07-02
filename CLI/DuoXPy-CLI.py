@@ -22,7 +22,7 @@ def clear():
  | |) | || / _ \>  <|  _/ || |
  |___/ \_,_\___/_/\_\_|  \_, |
                          |__/ """)
-    print(f"Version {VERSION} by GorouFlex - CLI")
+    print(f"Version {VERSION} by GorouFlex - CLI Edition")
     print()
 
 def create_config():
@@ -157,7 +157,9 @@ def switch_to_gui():
     with open(gui_file, 'w', encoding='utf-8') as f:
         f.write(data)
     print("Switched to GUI edition successfully.")
-    input("Press Enter to continue")
+    os.remove(CONFIG_FILE)
+    input("Press Enter to restart")
+    raise SystemExit
 
 def about():
     options = {
@@ -167,8 +169,8 @@ def about():
     }
     while True:
         clear()
-        print("About DuoXPy")
-        print("The New Hope Update (2NewHopeL2T)")
+        print("About DuoXPy CLI Edition")
+        print("The New Hope Update (2NSNH2024)")
         print("----------------------------")
         print("Maintainer: GorouFlex\nCLI: GorouFlex")
         print("----------------------------")
@@ -192,7 +194,7 @@ def run():
     lessons = int(config['LESSONS'])
     skip_welcome = config['SKIP_WELCOME']
     verbose = config['VERBOSE']
-    print(f"Current configuration:\nLessons: {lessons}, Skip Welcome: {skip_welcome}")
+    print(f"Current configuration:\nLessons: {lessons}, Skip Welcome: {skip_welcome}, Verbose: {verbose}")
     print()
     headers = {
         "Content-Type": "application/json",
@@ -211,11 +213,15 @@ def run():
         print()
         xp = 0
 
-        def progress_bar(completed, total, bar_length=50):
+        def progress_bar(completed, total, bar_length=50, xp_gain=None):
             progress = completed / total
             arrow = '-' * int(round(progress * bar_length) - 1) + '>'
             spaces = ' ' * (bar_length - len(arrow))
-            print(f'[{arrow + spaces}] {int(round(progress * 100))}% Complete', end='\r')
+            percent_complete = int(round(progress * 100))
+            if xp_gain is not None:
+                print(f'[{completed}] - {xp_gain} XP [{arrow + spaces}] {percent_complete}%')
+            else:
+                print(f'[{arrow + spaces}] {percent_complete}%', end='\r')
 
         for i in range(lessons):
             try:
@@ -266,7 +272,7 @@ def run():
                 xp += response['xpGain']
                 z = response['xpGain']
                 if verbose == 'y':
-                    print(f"[{i+1}] - {z} XP")
+                    progress_bar(i + 1, lessons, xp_gain=z)
                 else:
                     progress_bar(i + 1, lessons)
             except Exception as e:
