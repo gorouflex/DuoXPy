@@ -11,7 +11,7 @@ import webbrowser
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(current_dir, 'config.ini')
-VERSION = '2.2.0'
+VERSION = '2.3.0'
 GITHUB_REPO = 'gorouflex/DuoXPy' 
 config = configparser.ConfigParser()
 
@@ -22,7 +22,7 @@ def clear():
  | |) | || / _ \>  <|  _/ || |
  |___/ \_,_\___/_/\_\_|  \_, |
                          |__/ """)
-    print(f"Version {VERSION} by GorouFlex - CLI")
+    print(f"Version {VERSION} by GorouFlex - CLI Edition")
     print()
 
 def create_config():
@@ -30,10 +30,12 @@ def create_config():
     duolingo_jwt = input("Enter your Duolingo JWT: ")
     lessons = input("Enter the number of lessons: ")
     skip_welcome = input("Skip Welcome? (y/n): ")
+    verbose = input("Enable verbose output? (y/n): ")
     config['Settings'] = {
         'DUOLINGO_JWT': duolingo_jwt,
         'LESSONS': lessons,
-        'SKIP_WELCOME': skip_welcome
+        'SKIP_WELCOME': skip_welcome,
+        'VERBOSE': verbose
     }
     with open(CONFIG_FILE, 'w') as configfile:
         config.write(configfile)
@@ -43,7 +45,7 @@ def check_config_integrity():
         create_config()
         return
     config.read(CONFIG_FILE)
-    if not config.has_section('Settings') or not config.has_option('Settings', 'DUOLINGO_JWT') or not config.has_option('Settings', 'LESSONS') or not config.has_option('Settings', 'SKIP_WELCOME'):
+    if not config.has_section('Settings') or not config.has_option('Settings', 'DUOLINGO_JWT') or not config.has_option('Settings', 'LESSONS') or not config.has_option('Settings', 'SKIP_WELCOME') or not config.has_option('Settings', 'VERBOSE'):
         create_config()
 
 def read_config():
@@ -58,6 +60,7 @@ def update_settings():
         print("1. Duolingo JWT")
         print("2. Lessons")
         print("3. Skip Welcome")
+        print("4. Verbose Output")
         print()
         print("B. Back")
         print()
@@ -69,6 +72,8 @@ def update_settings():
             config['Settings']['LESSONS'] = input(f"Enter the number of lessons [{config['Settings']['LESSONS']}]: ") or config['Settings']['LESSONS']
         elif choice == '3':
             config['Settings']['SKIP_WELCOME'] = input(f"Skip Welcome? (y/n) [{config['Settings']['SKIP_WELCOME']}]: ") or config['Settings']['SKIP_WELCOME']
+        elif choice == '4':
+            config['Settings']['VERBOSE'] = input(f"Enable verbose output? (y/n) [{config['Settings']['VERBOSE']}]: ") or config['Settings']['VERBOSE']
         elif choice == 'b':
             break
         else:
@@ -135,7 +140,7 @@ def check_updates():
                 raise SystemExit
 
 def updater():
-    latest_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/DuoXPy/DuoXPy.py"
+    latest_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/CLI/DuoXPy-CLI.py"
     response = urllib.request.urlopen(latest_url)
     data = response.read().decode('utf-8')
     with open(__file__, 'w', encoding='utf-8') as f:
@@ -144,19 +149,34 @@ def updater():
     input("Press Enter to restart the script")
     raise SystemExit
 
+def switch_to_gui():
+    latest_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/GUI/DuoXPy-GUI.py"
+    response = urllib.request.urlopen(latest_url)
+    data = response.read().decode('utf-8')
+    gui_file = os.path.join(current_dir, 'DuoXPy-GUI.py')
+    with open(gui_file, 'w', encoding='utf-8') as f:
+        f.write(data)
+    print("Switched to GUI edition successfully.")
+    os.remove(CONFIG_FILE)
+    input("Press Enter to restart")
+    raise SystemExit
+
 def about():
     options = {
         "1": lambda: webbrowser.open("https://www.github.com/gorouflex/DuoXPy"),
+        "2": switch_to_gui,
         "b": "break",
     }
     while True:
         clear()
-        print("About DuoXPy")
-        print("The New Hope Update (2NewHopeL2T)")
+        print("About DuoXPy CLI Edition")
+        print("The New Hope Update (2NSNH2024)")
         print("----------------------------")
         print("Maintainer: GorouFlex\nCLI: GorouFlex")
         print("----------------------------")
-        print("\n1. Open GitHub repo\n\nB. Back\n")
+        print("\n1. Open GitHub repo")
+        print("2. Switch to GUI Edition")
+        print("\nB. Back\n")
         choice = input("Option: ").lower().strip()
         action = options.get(choice, None)
         if action is None:
@@ -173,7 +193,8 @@ def run():
     duolingo_jwt = config['DUOLINGO_JWT']
     lessons = int(config['LESSONS'])
     skip_welcome = config['SKIP_WELCOME']
-    print(f"Current configuration:\nLessons: {lessons}, Skip Welcome: {skip_welcome}")
+    verbose = config['VERBOSE']
+    print(f"Current configuration:\nLessons: {lessons}, Skip Welcome: {skip_welcome}, Verbose: {verbose}")
     print()
     headers = {
         "Content-Type": "application/json",
@@ -191,7 +212,18 @@ def run():
         print(f"Learning (language): {learningLanguage}")
         print()
         xp = 0
-        for _ in range(lessons):
+
+        def progress_bar(completed, total, bar_length=50, xp_gain=None):
+            progress = completed / total
+            arrow = '-' * int(round(progress * bar_length) - 1) + '>'
+            spaces = ' ' * (bar_length - len(arrow))
+            percent_complete = int(round(progress * 100))
+            if xp_gain is not None:
+                print(f'[{completed}] - {xp_gain} XP [{arrow + spaces}] {percent_complete}%')
+            else:
+                print(f'[{arrow + spaces}] {percent_complete}%', end='\r')
+
+        for i in range(lessons):
             try:
                 session_payload = json.dumps({
                     "challengeTypes": [
@@ -239,9 +271,15 @@ def run():
                 response = json.loads(response_data)
                 xp += response['xpGain']
                 z = response['xpGain']
-                print(f"[{_+1}] - {z} XP")
+                if verbose == 'y':
+                    progress_bar(i + 1, lessons, xp_gain=z)
+                else:
+                    progress_bar(i + 1, lessons)
             except Exception as e:
-                print(f"An error occurred during lesson {_+1}: {e}")                           
+                print(f"An error occurred during lesson {i+1}: {e}")                           
+        if verbose != 'y':
+            print() 
+        print()
         print(f"🎉 You won {xp} XP")
         input("Press Enter to continue.")
     except Exception as error:
