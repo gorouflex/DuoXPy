@@ -5,10 +5,28 @@ import sys
 import subprocess
 import time
 import webbrowser
-try:
-    import jwt
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyJwt"])
+import configparser
+import os
+import sys
+import subprocess
+import time
+import webbrowser
+
+
+def _import_or_install(module, package=None):
+    try:
+        return __import__(module)
+    except ImportError:
+        return _pip_install(package or module)
+
+
+def _pip_install(package) -> None:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+
+_import_or_install("jwt", "PyJwt")
+_import_or_install("requests")
+
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(current_dir, "config.ini")
