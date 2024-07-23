@@ -1,10 +1,3 @@
-import os
-import configparser
-import requests
-import sys
-import subprocess
-import time
-import webbrowser
 import configparser
 import os
 import sys
