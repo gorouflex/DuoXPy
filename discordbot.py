@@ -5,7 +5,7 @@ import os
 import json
 import base64
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -48,7 +48,8 @@ async def login(interaction: discord.Interaction, jwt_token: str):
     accounts = load_accounts()
     accounts[str(interaction.user.id)] = {
         "jwt_token": jwt_token,
-        "streaksaver": False
+        "streaksaver": False,
+        "duolingo_profile": ""  # Initialize the profile URL as empty
     }
     save_accounts(accounts)
     await interaction.response.send_message("Your JWT token has been saved!", ephemeral=True)
@@ -164,11 +165,36 @@ async def streaksaver(interaction: discord.Interaction, enable: bool):
     else:
         accounts[user_id] = {
             "jwt_token": "",
-            "streaksaver": enable
+            "streaksaver": enable,
+            "duolingo_profile": ""  # Initialize the profile URL as empty
         }
     save_accounts(accounts)
     status = "enabled" if enable else "disabled"
     await interaction.response.send_message(f"Streak saver has been {status}.", ephemeral=True)
+
+@bot.tree.command(name="adduser", description="Add or update your Duolingo profile URL")
+@app_commands.describe(profile_url="Your Duolingo profile URL")
+async def add_user(interaction: discord.Interaction, profile_url: str):
+    accounts = load_accounts()
+    user_id = str(interaction.user.id)
+    
+    if user_id in accounts:
+        accounts[user_id]["duolingo_profile"] = profile_url
+        save_accounts(accounts)
+        await interaction.response.send_message(f"Your Duolingo profile URL has been updated to: {profile_url}", ephemeral=True)
+    else:
+        await interaction.response.send_message("You need to log in first using /login before adding your profile URL.", ephemeral=True)
+
+@bot.tree.command(name="finduser", description="Find a user's Duolingo profile URL")
+@app_commands.describe(user="The user to find")
+async def find_user(interaction: discord.Interaction, user: discord.User):
+    accounts = load_accounts()
+    user_id = str(user.id)
+    if user_id in accounts:
+        duolingo_profile = accounts[user_id].get("duolingo_profile", "Not set")
+        await interaction.response.send_message(f"{user.mention}'s Duolingo profile: {duolingo_profile}", ephemeral=True)
+    else:
+        await interaction.response.send_message("User not found. They might not have logged in or provided a profile URL.", ephemeral=True)
 
 @tasks.loop(hours=1)
 async def streak_saver_task():
@@ -177,95 +203,11 @@ async def streak_saver_task():
     channel_status = bot.get_channel(1261239177958264854)
     if channel_status:
         status_embed = discord.Embed(
-            title="Streak Saver Notification",
-            description="The streak saver function has run successfully.",
-            color=0x90EE90  # Light green color
+            title="Streak Saver Task",
+            description=f"Streak saver task ran at {now.strftime('%Y-%m-%d %H:%M:%S')}",
+            color=0x90EE90
         )
         await channel_status.send(embed=status_embed)
-    else:
-        print(f"Channel with ID 1261239177958264854 not found.")
-
-    # Award XP to users with streak saver enabled
-    accounts = load_accounts()
-    for user_id, data in accounts.items():
-        if data.get("streaksaver"):
-            channel = bot.get_channel(1261239245415120936)
-            if channel:
-                # Process one lesson
-                jwt_token = data["jwt_token"]
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {jwt_token}",
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-                }
-                try:
-                    sub = decode_jwt(jwt_token)['sub']
-                    user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
-                    user_info = requests.get(user_info_url, headers=headers).json()
-                    fromLanguage = user_info['fromLanguage']
-                    learningLanguage = user_info['learningLanguage']
-
-                    session_payload = {
-                        "challengeTypes": [
-                            "assist", "characterIntro", "characterMatch", "characterPuzzle",
-                            "characterSelect", "characterTrace", "characterWrite",
-                            "completeReverseTranslation", "definition", "dialogue",
-                            "extendedMatch", "extendedListenMatch", "form", "freeResponse",
-                            "gapFill", "judge", "listen", "listenComplete", "listenMatch",
-                            "match", "name", "listenComprehension", "listenIsolation",
-                            "listenSpeak", "listenTap", "orderTapComplete", "partialListen",
-                            "partialReverseTranslate", "patternTapComplete", "radioBinary",
-                            "radioImageSelect", "radioListenMatch", "radioListenRecognize",
-                            "radioSelect", "readComprehension", "reverseAssist",
-                            "sameDifferent", "select", "selectPronunciation",
-                            "selectTranscription", "svgPuzzle", "syllableTap",
-                            "syllableListenTap", "speak", "tapCloze", "tapClozeTable",
-                            "tapComplete", "tapCompleteTable", "tapDescribe", "translate",
-                            "transliterate", "transliterationAssist", "typeCloze",
-                            "typeClozeTable", "typeComplete", "typeCompleteTable",
-                            "writeComprehension"
-                        ],
-                        "fromLanguage": fromLanguage,
-                        "isFinalLevel": False,
-                        "isV2": True,
-                        "juicy": True,
-                        "learningLanguage": learningLanguage,
-                        "smartTipsVersion": 2,
-                        "type": "GLOBAL_PRACTICE"
-                    }
-                    session_url = "https://www.duolingo.com/2017-06-30/sessions"
-                    session = requests.post(session_url, headers=headers, json=session_payload).json()
-                    update_payload = {
-                        **session,
-                        "heartsLeft": 0,
-                        "startTime": (datetime.now().timestamp() - 60),
-                        "enableBonusPoints": False,
-                        "endTime": datetime.now().timestamp(),
-                        "failed": False,
-                        "maxInLessonStreak": 9,
-                        "shouldLearnThings": True
-                    }
-                    update_url = f"https://www.duolingo.com/2017-06-30/sessions/{session['id']}"
-                    response = requests.put(update_url, headers=headers, json=update_payload).json()
-                    xp = response['xpGain']
-
-                    embed = discord.Embed(
-                        title="Duolingo XP Update",
-                        description=f"<@{user_id}> has been awarded {xp} XP for their streak saver!",
-                        color=0x90EE90  # Light green color
-                    )
-                    await channel.send(embed=embed)
-
-                    # Optionally update user's XP in your accounts or another storage mechanism
-                    if "xp" in data:
-                        data["xp"] += xp
-                    else:
-                        data["xp"] = xp
-                    save_accounts(accounts)
-
-                except Exception as e:
-                    # Log or notify about the error
-                    print(f"Error processing streak saver for user {user_id}: {e}")
 
 @bot.tree.command(name="teststreaksaver", description="Test streak saver for all logged in accounts")
 async def test_streaksaver(interaction: discord.Interaction):
