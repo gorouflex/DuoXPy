@@ -60,6 +60,9 @@ document.cookie
 <p align="left">
   <img src="https://github.com/gorouflex/Sandy/blob/main/Img/DuoXPy/preview.png">
   <img src="https://github.com/gorouflex/Sandy/blob/main/Img/DuoXPy/preview1.png">
+  <img src="https://github.com/Chromeyc/img/blob/main/Streaksaver.png">
+  <img src="https://github.com/Chromeyc/img/blob/main/commands.png">
+  <img src="https://github.com/Chromeyc/img/blob/main/Xpfarm.png>
 </p>
 
 # Disclaimer
