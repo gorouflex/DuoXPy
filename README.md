@@ -77,4 +77,5 @@ document.cookie
 > - This repo is only for education purposes! 
 ### Special thanks to 💖
 - [rfoal](https://github.com/rfoel/) x [duolingo](https://github.com/rfoel/duolingo) for the source code and idea
+- [Chromeyc](https://github.com/Chromeyc) aka `admin_x2` for making `DuoXPy` available in Discord as a bot
 - [ESSTX](https://github.com/ESSTX) for xpGains fixes [PR #1](https://github.com/gorouflex/DuoXPy/pull/1), [PR #2](https://github.com/gorouflex/DuoXPy/pull/2) [OLD]
