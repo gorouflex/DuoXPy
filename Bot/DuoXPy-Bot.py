@@ -12,7 +12,9 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='/', intents=intents)
 log_channel_id = logs-chanell-id
+log_channel_id = 1261239245415120936
 streak_channel_id = streak-chanell-id
+streak_channel_id = 1261239177958264854
 bot_token = 'BOT-TOKEN-HERE'
 
 def decode_jwt(jwt):
@@ -241,7 +243,7 @@ async def process_duolingo(interaction: discord.Interaction, lessons: int):
                 channel = bot.get_channel(log_channel_id)
                 if channel:
                     embed = discord.Embed(
-                        title="Duolingo XP Update",
+                        title="Duolingo XP Update <:Watermelon:1266290988251349044>",
                         description=f"{interaction.user.mention} has been awarded {xp} XP!",
                         color=0x90EE90
                     )
@@ -249,7 +251,7 @@ async def process_duolingo(interaction: discord.Interaction, lessons: int):
                 await interaction.followup.send(f"Done, please check <#{log_channel_id}>", ephemeral=True)
             else:
                 embed = discord.Embed(
-                    title="Duolingo XP Update",
+                    title="Duolingo XP Update <:Watermelon:1266290988251349044>",
                     description=f"You won {xp} XP!",
                     color=0x90EE90
                 )
@@ -271,7 +273,7 @@ async def donate(interaction: discord.Interaction):
         description="We appreciate all your donations",
         color=0x90EE90
     )
-    embed.add_field(name="Paypal", value="[Donate Here](https://www.paypal.me/tamkohoatdong)", inline=False)
+    embed.add_field(name="Paypal", value="[Donate Here](https://www.paypal.me/tamkohoatdong) <:6659paypallogo:1266414604636917905>", inline=False)
     await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="streaksaver", description="Toggle the streak saver feature")
@@ -396,7 +398,7 @@ async def streak_saver_task():
                         xp = update_response['xpGain']
                         channel = bot.get_channel(log_channel_id)
                         embed = discord.Embed(
-                            title="Duolingo XP Update",
+                            title=" Duolingo XP Update <:Watermelon:1266290988251349044>",
                             description=f"<@{user_id}> has been awarded {xp} XP on {account_name}!",
                             color=0x90EE90
                         )
@@ -408,11 +410,60 @@ async def streak_saver_task():
     channel_status = bot.get_channel(streak_channel_id)
     if channel_status:
         status_embed = discord.Embed(
-            title="Streak Saver Task",
-            description=f"Streak saver task ran at {now.strftime('%Y-%m-%d %H:%M:%S')}",
-            color=0x90EE90
+            title="Streak Saver Task <:Streak:1266290974275932262>",
+            description=f"Streak saver task ran at {now.strftime('%Y-%m-%d %H:%M:%S')} <:Streak:1266290974275932262>",
+            color=0xFF7518
         )
         await channel_status.send(embed=status_embed)
+
+
+@bot.tree.command(name="guidetoken", description="Guide on how to use Duolingo JWT token")
+async def guide_token(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Guide to Using Duolingo JWT Token",
+        description=(
+            "To use this bot effectively, follow these steps:\n\n"
+            "**1. Obtain JWT Token:**\n"
+            "   - Copy the Code in <#1261239187076812821> Then Press Right Click on `duolingo.com` And Press `Inspect` or press `CTRL + SHIFT + I` Then Go To The `Console Tab` And Paste the Code in <#1261239187076812821>\n\n"
+            "**2. Save JWT Token:**\n"
+            "   - Use the `/login` command with your JWT token to save it in the bot.\n\n"
+            "**3. Select Account:**\n"
+            "   - Use the `/selectaccount` command to choose the account you want to work with.\n\n"
+            "**4. Manage Account:**\n"
+            "   - Use `/logout` to remove an account, `/info` to view details, and `/adduser` to update your profile URL.\n\n"
+            "**5. Perform Actions:**\n"
+            "   - Use `/duolingo` to complete lessons and gain XP, and `/streaksaver` to enable or disable the streak saver feature.\n\n"
+            "For more information, use `/help` to see a list of all commands."
+        ),
+        color=0x90EE90
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+
+@bot.tree.command(name="help", description="List all available commands")
+async def help_command(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Available Commands",
+        description=(
+            "**/login** - Save your Duolingo JWT token\n"
+            "**/logout** - Remove your Duolingo JWT token\n"
+            "**/info** - Show user account information\n"
+            "**/selectaccount** - Select an account\n"
+            "**/listaccount** - List all added accounts\n"
+            "**/about** - About DuoXPy Discord Bot Edition\n"
+            "**/duolingo** - Complete Duolingo lessons and gain XP\n"
+            "**/donate** - Donate to support us\n"
+            "**/streaksaver** - Toggle the streak saver feature\n"
+            "**/adduser** - Add or update your Duolingo profile URL\n"
+            "**/finduser** - Find a user's Duolingo profile URL\n"
+            "**/guidetoken** - Guide on how to use Duolingo JWT token\n"
+            "**/help** - List all available commands"
+        ),
+        color=0x90EE90
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 @bot.tree.command(name="teststreaksaver", description="Test streak saver for all logged in accounts")
 async def test_streaksaver(interaction: discord.Interaction):
@@ -424,7 +475,7 @@ async def test_streaksaver(interaction: discord.Interaction):
         await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
         return
 
-    await interaction.response.send_message("Test streak saver in progress...", ephemeral=True)
+    await interaction.response.send_message("Test streak saver in progress... <:Streak:1266290974275932262>", ephemeral=True)
 
     accounts = load_accounts()
     async with aiohttp.ClientSession() as session:
@@ -492,7 +543,7 @@ async def test_streaksaver(interaction: discord.Interaction):
                         xp = update_response['xpGain']
                         channel = bot.get_channel(log_channel_id)
                         embed = discord.Embed(
-                            title="Duolingo XP Update",
+                            title="Duolingo XP Update <:Watermelon:1266290988251349044>",
                             description=f"<@{user_id}> has been awarded {xp} XP on {account_name}!",
                             color=0x90EE90
                         )
