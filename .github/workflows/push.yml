@@ -31,7 +31,7 @@ jobs:
           zip -r DuoXPy-CLI.zip DuoXPy-CLI
           zip -r DuoXPy-Core.zip DuoXPy-Core
           zip -r DuoXPy-GUI.zip DuoXPy-GUI
-           zip -r DuoXPy-Bot.zip DuoXPy-Bot
+          zip -r DuoXPy-Bot.zip DuoXPy-Bot
         env:
           TAG: ${{ env.TAG }}
 
