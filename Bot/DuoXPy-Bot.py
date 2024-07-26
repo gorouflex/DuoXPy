@@ -11,11 +11,9 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='/', intents=intents)
-log_channel_id = logs-chanell-id
-log_channel_id = 1261239245415120936
-streak_channel_id = streak-chanell-id
-streak_channel_id = 1261239177958264854
-bot_token = 'BOT-TOKEN-HERE'
+log_channel_id = 123 # Logs Chanell id Here
+streak_channel_id = 123 # Chanell Id Of Streak logs here
+bot_token = 'bot-token' # Bot Token Here
 
 def decode_jwt(jwt):
     try:
