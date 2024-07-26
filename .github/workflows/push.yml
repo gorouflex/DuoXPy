@@ -21,6 +21,7 @@ jobs:
           mv CLI DuoXPy-CLI
           mv Core DuoXPy-Core
           mv GUI DuoXPy-GUI
+          mv Bot DuoXPy-Bot
           mv DuoXPy-CLI/DuoXPy-CLI.py DuoXPy-CLI/DuoXPy.py
           mv DuoXPy-Core/DuoXPy-Core.py DuoXPy-Core/DuoXPy.py
           mv DuoXPy-GUI/DuoXPy-GUI.py DuoXPy-GUI/DuoXPy.py
@@ -30,6 +31,7 @@ jobs:
           zip -r DuoXPy-CLI.zip DuoXPy-CLI
           zip -r DuoXPy-Core.zip DuoXPy-Core
           zip -r DuoXPy-GUI.zip DuoXPy-GUI
+           zip -r DuoXPy-Bot.zip DuoXPy-Bot
         env:
           TAG: ${{ env.TAG }}
 
@@ -48,6 +50,6 @@ jobs:
           name: v${{ env.TAG }}
           tag_name: ${{ env.TAG }}
           body_path: ${{ github.workspace }}-RELEASE_NOTES.txt
-          files: DuoXPy-CLI.zip, DuoXPy-Core.zip, DuoXPy-GUI.zip
+          files: DuoXPy-CLI.zip, DuoXPy-Core.zip, DuoXPy-GUI.zip, DuoXPy-Bot.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
