@@ -1,8 +1,8 @@
 ## [2.4.0]
 
 - Introducing `DuoXPy Discord Bot Edition`, a Discord bot version of `DuoXPy` for everone, require a VPS to run or something like that, or you can try this [bot](https://discord.com/oauth2/authorize?client_id=1261262994336124990&permissions=8&integration_type=0&scope=bot) or join this [server](https://discord.gg/SrHbNBJG) to use this edition of `DuoXPy`
-- For some reason, refactor PR from @SENPAi-03 to CLI has been delayed, but will public soon in v2.5.0
-### Special thanks @Chromeyc for maintenance this `DuoXPy Discord Bot`
+- For some reason, refactor PR from @SENPAi-03 for CLI has been delayed, but will public soon in v2.5.0
+#### Special thanks @Chromeyc for maintenance this `DuoXPy Discord Bot`
 ## [2.3.0]
 
 - Introducing: `DuoXPy GUI Edition`, a friendly user interface of `DuoXPy` for everyone
