@@ -10,6 +10,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
+import aiohttp
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -69,72 +70,75 @@ async def process_duolingo(interaction: discord.Interaction, lessons: int):
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
 
-    try:
-        sub = decode_jwt(jwt_token)['sub']
-        user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
-        user_info = requests.get(user_info_url, headers=headers).json()
-        fromLanguage = user_info['fromLanguage']
-        learningLanguage = user_info['learningLanguage']
-        xp = 0
+    async with aiohttp.ClientSession() as session:
+        try:
+            sub = decode_jwt(jwt_token)['sub']
+            user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
+            async with session.get(user_info_url, headers=headers) as response:
+                user_info = await response.json()
+            fromLanguage = user_info['fromLanguage']
+            learningLanguage = user_info['learningLanguage']
+            xp = 0
 
-        for _ in range(lessons):
-            session_payload = {
-                "challengeTypes": [
-                    "assist", "characterIntro", "characterMatch", "characterPuzzle",
-                    "characterSelect", "characterTrace", "characterWrite",
-                    "completeReverseTranslation", "definition", "dialogue",
-                    "extendedMatch", "extendedListenMatch", "form", "freeResponse",
-                    "gapFill", "judge", "listen", "listenComplete", "listenMatch",
-                    "match", "name", "listenComprehension", "listenIsolation",
-                    "listenSpeak", "listenTap", "orderTapComplete", "partialListen",
-                    "partialReverseTranslate", "patternTapComplete", "radioBinary",
-                    "radioImageSelect", "radioListenMatch", "radioListenRecognize",
-                    "radioSelect", "readComprehension", "reverseAssist",
-                    "sameDifferent", "select", "selectPronunciation",
-                    "selectTranscription", "svgPuzzle", "syllableTap",
-                    "syllableListenTap", "speak", "tapCloze", "tapClozeTable",
-                    "tapComplete", "tapCompleteTable", "tapDescribe", "translate",
-                    "transliterate", "transliterationAssist", "typeCloze",
-                    "typeClozeTable", "typeComplete", "typeCompleteTable",
-                    "writeComprehension"
-                ],
-                "fromLanguage": fromLanguage,
-                "isFinalLevel": False,
-                "isV2": True,
-                "juicy": True,
-                "learningLanguage": learningLanguage,
-                "smartTipsVersion": 2,
-                "type": "GLOBAL_PRACTICE"
-            }
-            session_url = "https://www.duolingo.com/2017-06-30/sessions"
-            session = requests.post(session_url, headers=headers, json=session_payload).json()
-            update_payload = {
-                **session,
-                "heartsLeft": 0,
-                "startTime": (datetime.now().timestamp() - 60),
-                "enableBonusPoints": False,
-                "endTime": datetime.now().timestamp(),
-                "failed": False,
-                "maxInLessonStreak": 9,
-                "shouldLearnThings": True
-            }
-            update_url = f"https://www.duolingo.com/2017-06-30/sessions/{session['id']}"
-            response = requests.put(update_url, headers=headers, json=update_payload).json()
-            xp += response['xpGain']
-        
-        channel = bot.get_channel(1261239245415120936)
-        embed = discord.Embed(
-            title="Duolingo XP Update",
-            description=f"{interaction.user.mention} You won {xp} XP!",
-            color=0x90EE90  # Light green color
-        )
-        if channel:
-            await channel.send(embed=embed)
-        await interaction.followup.send(embed=embed)
+            for _ in range(lessons):
+                session_payload = {
+                    "challengeTypes": [
+                        "assist", "characterIntro", "characterMatch", "characterPuzzle",
+                        "characterSelect", "characterTrace", "characterWrite",
+                        "completeReverseTranslation", "definition", "dialogue",
+                        "extendedMatch", "extendedListenMatch", "form", "freeResponse",
+                        "gapFill", "judge", "listen", "listenComplete", "listenMatch",
+                        "match", "name", "listenComprehension", "listenIsolation",
+                        "listenSpeak", "listenTap", "orderTapComplete", "partialListen",
+                        "partialReverseTranslate", "patternTapComplete", "radioBinary",
+                        "radioImageSelect", "radioListenMatch", "radioListenRecognize",
+                        "radioSelect", "readComprehension", "reverseAssist",
+                        "sameDifferent", "select", "selectPronunciation",
+                        "selectTranscription", "svgPuzzle", "syllableTap",
+                        "syllableListenTap", "speak", "tapCloze", "tapClozeTable",
+                        "tapComplete", "tapCompleteTable", "tapDescribe", "translate",
+                        "transliterate", "transliterationAssist", "typeCloze",
+                        "typeClozeTable", "typeComplete", "typeCompleteTable",
+                        "writeComprehension"
+                    ],
+                    "fromLanguage": fromLanguage,
+                    "isFinalLevel": False,
+                    "isV2": True,
+                    "juicy": True,
+                    "learningLanguage": learningLanguage,
+                    "smartTipsVersion": 2,
+                    "type": "GLOBAL_PRACTICE"
+                }
+                session_url = "https://www.duolingo.com/2017-06-30/sessions"
+                async with session.post(session_url, headers=headers, json=session_payload) as response:
+                    session_data = await response.json()
+                update_payload = {
+                    **session_data,
+                    "heartsLeft": 0,
+                    "startTime": (datetime.now().timestamp() - 60),
+                    "enableBonusPoints": False,
+                    "endTime": datetime.now().timestamp(),
+                    "failed": False,
+                    "maxInLessonStreak": 9,
+                    "shouldLearnThings": True
+                }
+                update_url = f"https://www.duolingo.com/2017-06-30/sessions/{session_data['id']}"
+                async with session.put(update_url, headers=headers, json=update_payload) as response:
+                    update_response = await response.json()
+                xp += update_response['xpGain']
+            
+            channel = bot.get_channel(1261239245415120936)
+            embed = discord.Embed(
+                title="Duolingo XP Update",
+                description=f"{interaction.user.mention} You won {xp} XP!",
+                color=0x90EE90  # Light green color
+            )
+            if channel:
+                await channel.send(embed=embed)
+            await interaction.followup.send(embed=embed)
 
-    except Exception as error:
-        # Send the result to a specific channel and normal user 
-        await interaction.followup.send(f"❌ Something went wrong: {str(error)}", ephemeral=True)
+        except Exception as error:
+            await interaction.followup.send(f"❌ Something went wrong: {str(error)}", ephemeral=True)
 
 @bot.tree.command(name="duolingo", description="Complete Duolingo lessons and gain XP")
 @app_commands.describe(lessons="Number of lessons to complete")
@@ -213,75 +217,79 @@ async def test_streaksaver(interaction: discord.Interaction):
         return
 
     accounts = load_accounts()
-    for user_id, data in accounts.items():
-        if data.get("jwt_token"):
-            jwt_token = data["jwt_token"]
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {jwt_token}",
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-            }
-            try:
-                sub = decode_jwt(jwt_token)['sub']
-                user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
-                user_info = requests.get(user_info_url, headers=headers).json()
-                fromLanguage = user_info['fromLanguage']
-                learningLanguage = user_info['learningLanguage']
+    async with aiohttp.ClientSession() as session:
+        for user_id, data in accounts.items():
+            if data.get("jwt_token"):
+                jwt_token = data["jwt_token"]
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {jwt_token}",
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+                }
+                try:
+                    sub = decode_jwt(jwt_token)['sub']
+                    user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
+                    async with session.get(user_info_url, headers=headers) as response:
+                        user_info = await response.json()
+                    fromLanguage = user_info['fromLanguage']
+                    learningLanguage = user_info['learningLanguage']
 
-                session_payload = {
-                    "challengeTypes": [
-                        "assist", "characterIntro", "characterMatch", "characterPuzzle",
-                        "characterSelect", "characterTrace", "characterWrite",
-                        "completeReverseTranslation", "definition", "dialogue",
-                        "extendedMatch", "extendedListenMatch", "form", "freeResponse",
-                        "gapFill", "judge", "listen", "listenComplete", "listenMatch",
-                        "match", "name", "listenComprehension", "listenIsolation",
-                        "listenSpeak", "listenTap", "orderTapComplete", "partialListen",
-                        "partialReverseTranslate", "patternTapComplete", "radioBinary",
-                        "radioImageSelect", "radioListenMatch", "radioListenRecognize",
-                        "radioSelect", "readComprehension", "reverseAssist",
-                        "sameDifferent", "select", "selectPronunciation",
-                        "selectTranscription", "svgPuzzle", "syllableTap",
-                        "syllableListenTap", "speak", "tapCloze", "tapClozeTable",
-                        "tapComplete", "tapCompleteTable", "tapDescribe", "translate",
-                        "transliterate", "transliterationAssist", "typeCloze",
-                        "typeClozeTable", "typeComplete", "typeCompleteTable",
-                        "writeComprehension"
-                    ],
-                    "fromLanguage": fromLanguage,
-                    "isFinalLevel": False,
-                    "isV2": True,
-                    "juicy": True,
-                    "learningLanguage": learningLanguage,
-                    "smartTipsVersion": 2,
-                    "type": "GLOBAL_PRACTICE"
-                }
-                session_url = "https://www.duolingo.com/2017-06-30/sessions"
-                session = requests.post(session_url, headers=headers, json=session_payload).json()
-                update_payload = {
-                    **session,
-                    "heartsLeft": 0,
-                    "startTime": (datetime.now().timestamp() - 60),
-                    "enableBonusPoints": False,
-                    "endTime": datetime.now().timestamp(),
-                    "failed": False,
-                    "maxInLessonStreak": 9,
-                    "shouldLearnThings": True
-                }
-                update_url = f"https://www.duolingo.com/2017-06-30/sessions/{session['id']}"
-                response = requests.put(update_url, headers=headers, json=update_payload).json()
-                xp = response['xpGain']
-                # Send the result to a specific channel
-                channel = bot.get_channel(1261239245415120936)
-                embed = discord.Embed(
-                    title="Duolingo XP Update",
-                    description=f"<@{user_id}> has been awarded {xp} XP!",
-                    color=0x90EE90  # Light green color
-                )
-                if channel:
-                    await channel.send(embed=embed)
-            except Exception as error:
-                print(f"Error processing user {user_id}: {error}")
+                    session_payload = {
+                        "challengeTypes": [
+                            "assist", "characterIntro", "characterMatch", "characterPuzzle",
+                            "characterSelect", "characterTrace", "characterWrite",
+                            "completeReverseTranslation", "definition", "dialogue",
+                            "extendedMatch", "extendedListenMatch", "form", "freeResponse",
+                            "gapFill", "judge", "listen", "listenComplete", "listenMatch",
+                            "match", "name", "listenComprehension", "listenIsolation",
+                            "listenSpeak", "listenTap", "orderTapComplete", "partialListen",
+                            "partialReverseTranslate", "patternTapComplete", "radioBinary",
+                            "radioImageSelect", "radioListenMatch", "radioListenRecognize",
+                            "radioSelect", "readComprehension", "reverseAssist",
+                            "sameDifferent", "select", "selectPronunciation",
+                            "selectTranscription", "svgPuzzle", "syllableTap",
+                            "syllableListenTap", "speak", "tapCloze", "tapClozeTable",
+                            "tapComplete", "tapCompleteTable", "tapDescribe", "translate",
+                            "transliterate", "transliterationAssist", "typeCloze",
+                            "typeClozeTable", "typeComplete", "typeCompleteTable",
+                            "writeComprehension"
+                        ],
+                        "fromLanguage": fromLanguage,
+                        "isFinalLevel": False,
+                        "isV2": True,
+                        "juicy": True,
+                        "learningLanguage": learningLanguage,
+                        "smartTipsVersion": 2,
+                        "type": "GLOBAL_PRACTICE"
+                    }
+                    session_url = "https://www.duolingo.com/2017-06-30/sessions"
+                    async with session.post(session_url, headers=headers, json=session_payload) as response:
+                        session_data = await response.json()
+                    update_payload = {
+                        **session_data,
+                        "heartsLeft": 0,
+                        "startTime": (datetime.now().timestamp() - 60),
+                        "enableBonusPoints": False,
+                        "endTime": datetime.now().timestamp(),
+                        "failed": False,
+                        "maxInLessonStreak": 9,
+                        "shouldLearnThings": True
+                    }
+                    update_url = f"https://www.duolingo.com/2017-06-30/sessions/{session_data['id']}"
+                    async with session.put(update_url, headers=headers, json=update_payload) as response:
+                        update_response = await response.json()
+                    xp = update_response['xpGain']
+                    # Send the result to a specific channel
+                    channel = bot.get_channel(1261239245415120936)
+                    embed = discord.Embed(
+                        title="Duolingo XP Update",
+                        description=f"<@{user_id}> has been awarded {xp} XP!",
+                        color=0x90EE90  # Light green color
+                    )
+                    if channel:
+                        await channel.send(embed=embed)
+                except Exception as error:
+                    print(f"Error processing user {user_id}: {error}")
 
     await interaction.response.send_message("Test streak saver completed.", ephemeral=True)
 
