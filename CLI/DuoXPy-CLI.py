@@ -1,105 +1,60 @@
-import configparser
 import os
-import sys
-import subprocess
+import json
+import base64
+import configparser
 import time
+from datetime import datetime
+import urllib.request
+import urllib.parse
+import urllib.error
 import webbrowser
 
-
-def _import_or_install(module, package=None):
-    try:
-        return __import__(module)
-    except ImportError:
-        return _pip_install(package or module)
-
-
-def _pip_install(package) -> None:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-
-_import_or_install("jwt", "PyJwt")
-_import_or_install("requests")
-
-
 current_dir = os.path.dirname(os.path.realpath(__file__))
-CONFIG_FILE = os.path.join(current_dir, "config.ini")
-VERSION = "2.3.0"
-GITHUB_REPO = "gorouflex/DuoXPy"
+CONFIG_FILE = os.path.join(current_dir, 'config.ini')
+VERSION = '2.3.0'
+GITHUB_REPO = 'gorouflex/DuoXPy' 
 config = configparser.ConfigParser()
 
-
-def log():
-    cls, msg, etb = sys.exc_info()
-    fname = os.path.split(etb.tb_frame.f_code.co_filename)[1]
-    cname = cls.__name__
-    lineno = etb.tb_lineno
-    print(f"{fname}: {lineno} --> {cname}: {msg}")
-
-
-def clear() -> None:
+def clear():
     os.system("cls" if os.name == "nt" else "clear")
+    print(r"""  ___          __  _____      
+ |   \ _  _ ___\ \/ / _ \_  _ 
+ | |) | || / _ \>  <|  _/ || |
+ |___/ \_,_\___/_/\_\_|  \_, |
+                         |__/ """)
+    print(f"Version {VERSION} by GorouFlex - CLI Edition")
+    print()
 
-
-def welcome() -> None:
+def create_config():
     clear()
-    print(
-        f'''
-┌─────────────────────────────────────────────────────┐
-│ ╔════════╗               ╔══╗  ╔══╦═══════╗         │
-│ ╚╗  ╔═╗  ╠══╗ ╔══╦═══════╣  ╚╗╔╝  ║  ╔═╗  ╠═══╦═══╗ │
-│  ║  ║ ║  ║  ║ ║  ║  ╔═╗  ╠═══╗╔═══╣  ╚═╝  ║   ║   ║ │
-│  ║  ║ ║  ║  ║ ║  ║  ║ ║  ╠═══╝╚═══╣  ╔════╬═══╗   ║ │
-│ ╔╝  ╚═╝  ║  ╚═╝  ║  ╚═╝  ║  ╔╝╚╗  ║  ║    ║       ║ │
-│ ╚════════╩═══════╩═══════╩══╝  ╚══╩══╝    ╚═══════╝ │
-└─────────────────────────────────────────────────────┘
-            v{VERSION} for CLI - by GorouFlex
-'''
-    )
-
-
-def create_config() -> None:
-    welcome()
     duolingo_jwt = input("Enter your Duolingo JWT: ")
     lessons = input("Enter the number of lessons: ")
-    skip_welcome = input("Skip Welcome? (Y/n): ")
-    verbose = input("Enable verbose output? (Y/n): ")
-    config["Settings"] = {
-        "DUOLINGO_JWT": duolingo_jwt,
-        "LESSONS": lessons,
-        "SKIP_WELCOME": skip_welcome,
-        "VERBOSE": verbose,
+    skip_welcome = input("Skip Welcome? (y/n): ")
+    verbose = input("Enable verbose output? (y/n): ")
+    config['Settings'] = {
+        'DUOLINGO_JWT': duolingo_jwt,
+        'LESSONS': lessons,
+        'SKIP_WELCOME': skip_welcome,
+        'VERBOSE': verbose
     }
-    write_config()
+    with open(CONFIG_FILE, 'w') as configfile:
+        config.write(configfile)
 
-
-def check_config_validity() -> None:
+def check_config_integrity():
     if not os.path.isfile(CONFIG_FILE) or os.stat(CONFIG_FILE).st_size == 0:
         create_config()
         return
     config.read(CONFIG_FILE)
-    if (
-        not config.has_section("Settings")
-        or not config.has_option("Settings", "DUOLINGO_JWT")
-        or not config.has_option("Settings", "LESSONS")
-        or not config.has_option("Settings", "SKIP_WELCOME")
-        or not config.has_option("Settings", "VERBOSE")
-    ):
+    if not config.has_section('Settings') or not config.has_option('Settings', 'DUOLINGO_JWT') or not config.has_option('Settings', 'LESSONS') or not config.has_option('Settings', 'SKIP_WELCOME') or not config.has_option('Settings', 'VERBOSE'):
         create_config()
 
-
-def read_config() -> configparser.SectionProxy:
+def read_config():
     config.read(CONFIG_FILE)
-    return config["Settings"]
+    return config['Settings']
 
-
-def write_config() -> None:
-    with open(CONFIG_FILE, 'w') as configfile:
-        config.write(configfile)
-
-
-def update_settings() -> None:
+def update_settings():    
     while True:
-        welcome()
+        clear()
         print("Settings:")
         print()
         print("1. Duolingo JWT")
@@ -111,169 +66,113 @@ def update_settings() -> None:
         print()
         choice = input("Option: ").lower().strip()
         print()
-        match choice:
-            case '1':
-                config["Settings"]["DUOLINGO_JWT"] = (
-                    input(
-                        f"Enter your Duolingo JWT [{config['Settings']['DUOLINGO_JWT']}]: "
-                    )
-                    or config["Settings"]["DUOLINGO_JWT"]
-                )
-            case '2':
-                config["Settings"]["LESSONS"] = (
-                    input(
-                        f"Enter the number of lessons [{config['Settings']['LESSONS']}]: "
-                    )
-                    or config["Settings"]["LESSONS"]
-                )
-            case '3':
-                config["Settings"]["SKIP_WELCOME"] = (
-                    input(
-                        f"Skip Welcome? (Y/n) [{config['Settings']['SKIP_WELCOME']}]: "
-                    )
-                    or config["Settings"]["SKIP_WELCOME"]
-                )
-            case '4':
-                config["Settings"]["VERBOSE"] = (
-                    input(
-                        f"Enable verbose output? (Y/n) [{config['Settings']['VERBOSE']}]: "
-                    )
-                    or config["Settings"]["VERBOSE"]
-                )
-            case 'b':
-                break
-            case _:
-                print("Invalid option. Please try again.")
-                input("Press Enter to continue.")
-        write_config()
+        if choice == '1':
+            config['Settings']['DUOLINGO_JWT'] = input(f"Enter your Duolingo JWT [{config['Settings']['DUOLINGO_JWT']}]: ") or config['Settings']['DUOLINGO_JWT']
+        elif choice == '2':
+            config['Settings']['LESSONS'] = input(f"Enter the number of lessons [{config['Settings']['LESSONS']}]: ") or config['Settings']['LESSONS']
+        elif choice == '3':
+            config['Settings']['SKIP_WELCOME'] = input(f"Skip Welcome? (y/n) [{config['Settings']['SKIP_WELCOME']}]: ") or config['Settings']['SKIP_WELCOME']
+        elif choice == '4':
+            config['Settings']['VERBOSE'] = input(f"Enable verbose output? (y/n) [{config['Settings']['VERBOSE']}]: ") or config['Settings']['VERBOSE']
+        elif choice == 'b':
+            break
+        else:
+            print("Invalid option. Please try again.")
+            input("Press Enter to continue.")
+        with open(CONFIG_FILE, 'w') as configfile:
+            config.write(configfile)
 
+def decode_jwt(jwt):
+    _, payload, _ = jwt.split('.')
+    decoded = base64.urlsafe_b64decode(payload + "==")
+    return json.loads(decoded)
 
-def decode_jwt(json_web_token: str) -> dict[str, int]:
-    options: dict[str, bool] = {
-        "verify_signature": False,
-        "verify_exp": True,
+def http_request(method, url, headers=None, data=None):
+    req = urllib.request.Request(url, headers=headers or {}, data=data, method=method)
+    with urllib.request.urlopen(req) as response:
+        return response.getcode(), response.read().decode('utf-8')
+
+def get_latest_ver():
+    headers = {
+        "User-Agent": "Mozilla/5.0"
     }
-    try:
-        payload = jwt.decode(json_web_token, options=options)
-    except jwt.ExpiredSignatureError:
-        raise SystemExit("Token has expired, please log in again.")
-    except jwt.InvalidTokenError:
-        raise SystemExit("Invalid token. Could not verify the token signature.")
-    return payload
-
-
-def _make_request(method: str, url: str, *, headers: dict = None, json: dict = None):
-    match method:
-        case "GET":
-            response = requests.get(url, headers=headers)
-        case "POST":
-            response = requests.post(url, headers=headers, json=json)
-        case "PUT":
-            response = requests.put(url, headers=headers, json=json)
-        case _:
-            raise ValueError(f"Invalid method: {method}")
-    data = response.json()
-    code = response.status_code
-    return code, data
-
-
-def get_latest_ver() -> str:
-    headers = {"User-Agent": "Mozilla/5.0"}
-    status, data = _make_request(
-        "GET",
-        f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
-        headers=headers,
-    )
+    status, data = http_request("GET", f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest", headers)
     if status == 200:
-        return data["tag_name"]
+        release_info = json.loads(data)
+        return release_info['tag_name']
     else:
-        raise LookupError("Failed to fetch the latest version on GitHub")
+        raise Exception("Failed to fetch the latest version from GitHub")
 
-
-def check_updates() -> None:
+def check_updates():
     LOCAL_VERSION = VERSION
     max_retries = 10
     skip_update_check = False
     for i in range(max_retries):
         try:
             latest_version = get_latest_ver()
+            break
         except:
             if i < max_retries - 1:
-                print(
-                    f"Failed to fetch latest version. Retrying {i+1}/{max_retries}..."
-                )
+                print(f"Failed to fetch latest version. Retrying {i+1}/{max_retries}...")
                 time.sleep(5)
             else:
-                welcome()
+                clear()
                 print("Failed to fetch latest version")
-                result = (
-                    input("Do you want to skip the check for updates? (Y/n): ")
-                    .lower()
-                    .strip()
-                )
-                if result == 'y':
+                result = input("Do you want to skip the check for updates? (y/n): ").lower().strip()
+                if result == "y":
                     skip_update_check = True
                 else:
                     print("Quitting...")
                     raise SystemExit
-        else: # on success
-            break
     if not skip_update_check:
         if LOCAL_VERSION < latest_version:
-            welcome()
+            clear()
             print(f"New version available: {latest_version}. Updating the script...")
             updater()
             raise SystemExit
         elif LOCAL_VERSION > latest_version:
-            welcome()
+            clear()
             print("Welcome to the DuoXPy Beta Program")
-            print(
-                "This beta build may not work as expected and is only for testing purposes!"
-            )
-            result = input("Do you want to continue (Y/n): ").lower().strip()
-            if result != 'y':
+            print("This beta build may not work as expected and is only for testing purposes!")
+            result = input("Do you want to continue (y/n): ").lower().strip()
+            if result != "y":
                 print("Quitting...")
                 raise SystemExit
 
-
-def updater() -> None:
-    latest_url = (
-        f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/CLI/DuoXPy-CLI.py"
-    )
-    response = requests.get(latest_url)
-    with open(__file__, 'wb') as f:
-        f.write(response.content)
+def updater():
+    latest_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/CLI/DuoXPy-CLI.py"
+    response = urllib.request.urlopen(latest_url)
+    data = response.read().decode('utf-8')
+    with open(__file__, 'w', encoding='utf-8') as f:
+        f.write(data)
     print("Script updated successfully.")
     input("Press Enter to restart the script")
     raise SystemExit
 
-
-def switch_to_gui() -> None:
-    latest_url = (
-        f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/GUI/DuoXPy-GUI.py"
-    )
-    response = requests.get(latest_url)
-    with open(__file__, 'wb') as f:
-        f.write(response.content)
+def switch_to_gui():
+    latest_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/GUI/DuoXPy-GUI.py"
+    response = urllib.request.urlopen(latest_url)
+    data = response.read().decode('utf-8')
+    with open(__file__, 'w', encoding='utf-8') as f:
+        f.write(data)
     print("Switched to GUI edition successfully.")
     os.remove(CONFIG_FILE)
     input("Press Enter to restart")
     raise SystemExit
 
-
-def about() -> None:
+def about():
     options = {
-        '1': lambda: webbrowser.open("https://www.github.com/gorouflex/DuoXPy"),
-        '2': switch_to_gui,
-        'b': "break",
+        "1": lambda: webbrowser.open("https://www.github.com/gorouflex/DuoXPy"),
+        "2": switch_to_gui,
+        "b": "break",
     }
     while True:
-        welcome()
+        clear()
         print("About DuoXPy CLI Edition")
         print("The New Hope Update (2NSNH2024)")
-        print('-' * 28)
+        print("----------------------------")
         print("Maintainer: GorouFlex\nCLI: GorouFlex")
-        print('-' * 28)
+        print("----------------------------")
         print("\n1. Open GitHub repo")
         print("2. Switch to GUI Edition")
         print("\nB. Back\n")
@@ -287,39 +186,31 @@ def about() -> None:
         else:
             action()
 
-
-def run() -> None:
-    welcome()
+def run():
+    clear()
     config = read_config()
-    duolingo_jwt = config["DUOLINGO_JWT"]
-    lessons = int(config["LESSONS"])
-    skip_welcome = config["SKIP_WELCOME"]
-    verbose = config["VERBOSE"]
-    print(
-        f"Current configuration:\nLessons: {lessons}, Skip Welcome: {skip_welcome}, Verbose: {verbose}"
-    )
+    duolingo_jwt = config['DUOLINGO_JWT']
+    lessons = int(config['LESSONS'])
+    skip_welcome = config['SKIP_WELCOME']
+    verbose = config['VERBOSE']
+    print(f"Current configuration:\nLessons: {lessons}, Skip Welcome: {skip_welcome}, Verbose: {verbose}")
     print()
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {duolingo_jwt}",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
     try:
-        sub: int = decode_jwt(duolingo_jwt)["sub"]
-        fields: str = "?fields=" + ','.join(
-            ["fromLanguage", "learningLanguage", "streak", "name"]
-        )
-        user_info_url: str = f"https://www.duolingo.com/2017-06-30/users/{sub}" + fields
-        status, user_info = _make_request("GET", user_info_url, headers=headers)
-        username: str = user_info["name"]
-        streak: int = user_info["streak"]
-        fromLanguage: str = user_info["fromLanguage"]
-        learningLanguage: str = user_info["learningLanguage"]
-        print(f"Logged in as: {username} ({streak} 🔥)")
+        sub = decode_jwt(duolingo_jwt)['sub']
+        user_info_url = f"https://www.duolingo.com/2017-06-30/users/{sub}?fields=fromLanguage,learningLanguage"
+        status, user_info_data = http_request("GET", user_info_url, headers)
+        user_info = json.loads(user_info_data)
+        fromLanguage = user_info['fromLanguage']
+        learningLanguage = user_info['learningLanguage']
         print(f"From (language): {fromLanguage}")
         print(f"Learning (language): {learningLanguage}")
         print()
-        xp: int = 0
+        xp = 0
 
         def progress_bar(completed, total, bar_length=50, xp_gain=None):
             progress = completed / total
@@ -327,73 +218,31 @@ def run() -> None:
             spaces = ' ' * (bar_length - len(arrow))
             percent_complete = int(round(progress * 100))
             if xp_gain is not None:
-                print(
-                    f"[{completed}] - {xp_gain} XP [{arrow + spaces}] {percent_complete}%"
-                )
+                print(f'[{completed}] - {xp_gain} XP [{arrow + spaces}] {percent_complete}%')
             else:
-                print(f"[{arrow + spaces}] {percent_complete}%", end='\r')
+                print(f'[{arrow + spaces}] {percent_complete}%', end='\r')
 
         for i in range(lessons):
             try:
-                session_payload = {
+                session_payload = json.dumps({
                     "challengeTypes": [
-                        "assist",
-                        "characterIntro",
-                        "characterMatch",
-                        "characterPuzzle",
-                        "characterSelect",
-                        "characterTrace",
-                        "characterWrite",
-                        "completeReverseTranslation",
-                        "definition",
-                        "dialogue",
-                        "extendedMatch",
-                        "extendedListenMatch",
-                        "form",
-                        "freeResponse",
-                        "gapFill",
-                        "judge",
-                        "listen",
-                        "listenComplete",
-                        "listenMatch",
-                        "match",
-                        "name",
-                        "listenComprehension",
-                        "listenIsolation",
-                        "listenSpeak",
-                        "listenTap",
-                        "orderTapComplete",
-                        "partialListen",
-                        "partialReverseTranslate",
-                        "patternTapComplete",
-                        "radioBinary",
-                        "radioImageSelect",
-                        "radioListenMatch",
-                        "radioListenRecognize",
-                        "radioSelect",
-                        "readComprehension",
-                        "reverseAssist",
-                        "sameDifferent",
-                        "select",
-                        "selectPronunciation",
-                        "selectTranscription",
-                        "svgPuzzle",
-                        "syllableTap",
-                        "syllableListenTap",
-                        "speak",
-                        "tapCloze",
-                        "tapClozeTable",
-                        "tapComplete",
-                        "tapCompleteTable",
-                        "tapDescribe",
-                        "translate",
-                        "transliterate",
-                        "transliterationAssist",
-                        "typeCloze",
-                        "typeClozeTable",
-                        "typeComplete",
-                        "typeCompleteTable",
-                        "writeComprehension",
+                        "assist", "characterIntro", "characterMatch", "characterPuzzle",
+                        "characterSelect", "characterTrace", "characterWrite",
+                        "completeReverseTranslation", "definition", "dialogue",
+                        "extendedMatch", "extendedListenMatch", "form", "freeResponse",
+                        "gapFill", "judge", "listen", "listenComplete", "listenMatch",
+                        "match", "name", "listenComprehension", "listenIsolation",
+                        "listenSpeak", "listenTap", "orderTapComplete", "partialListen",
+                        "partialReverseTranslate", "patternTapComplete", "radioBinary",
+                        "radioImageSelect", "radioListenMatch", "radioListenRecognize",
+                        "radioSelect", "readComprehension", "reverseAssist",
+                        "sameDifferent", "select", "selectPronunciation",
+                        "selectTranscription", "svgPuzzle", "syllableTap",
+                        "syllableListenTap", "speak", "tapCloze", "tapClozeTable",
+                        "tapComplete", "tapCompleteTable", "tapDescribe", "translate",
+                        "transliterate", "transliterationAssist", "typeCloze",
+                        "typeClozeTable", "typeComplete", "typeCompleteTable",
+                        "writeComprehension"
                     ],
                     "fromLanguage": fromLanguage,
                     "isFinalLevel": False,
@@ -401,57 +250,50 @@ def run() -> None:
                     "juicy": True,
                     "learningLanguage": learningLanguage,
                     "smartTipsVersion": 2,
-                    "type": "GLOBAL_PRACTICE",
-                }
+                    "type": "GLOBAL_PRACTICE"
+                })
                 session_url = "https://www.duolingo.com/2017-06-30/sessions"
-                status, session = _make_request(
-                    "POST", session_url, headers=headers, json=session_payload
-                )
-                update_payload = {
+                status, session_data = http_request("POST", session_url, headers, session_payload.encode())
+                session = json.loads(session_data)
+                update_payload = json.dumps({
                     **session,
                     "heartsLeft": 0,
-                    "startTime": (time.time() - 60),
+                    "startTime": (datetime.now().timestamp() - 60),
                     "enableBonusPoints": False,
-                    "endTime": time.time(),
+                    "endTime": datetime.now().timestamp(),
                     "failed": False,
                     "maxInLessonStreak": 9,
-                    "shouldLearnThings": True,
-                }
-                update_url = (
-                    f"https://www.duolingo.com/2017-06-30/sessions/{session['id']}"
-                )
-                status, response = _make_request(
-                    "PUT", update_url, headers=headers, json=update_payload
-                )
-                z = response["xpGain"]
-                xp += z
+                    "shouldLearnThings": True
+                })
+                update_url = f"https://www.duolingo.com/2017-06-30/sessions/{session['id']}"
+                status, response_data = http_request("PUT", update_url, headers, update_payload.encode())
+                response = json.loads(response_data)
+                xp += response['xpGain']
+                z = response['xpGain']
                 if verbose == 'y':
                     progress_bar(i + 1, lessons, xp_gain=z)
                 else:
                     progress_bar(i + 1, lessons)
             except Exception as e:
-                print(f"An error occurred during lesson {i+1}: {e}")
-                log()
+                print(f"An error occurred during lesson {i+1}: {e}")                           
         if verbose != 'y':
-            print()
+            print() 
         print()
-        print('🎉', f"You won {xp} XP")
+        print(f"🎉 You won {xp} XP")
         input("Press Enter to continue.")
     except Exception as error:
-        print('❌', "Something went wrong")
+        print("❌ Something went wrong")
         print(str(error))
-        log()
         input("Press Enter to continue.")
 
-
-def main() -> None:
+def main():
     check_updates()
-    check_config_validity()
-    if config.get("Settings", "SKIP_WELCOME", fallback='n').lower().strip() == 'y':
+    check_config_integrity()
+    if config.get('Settings', 'SKIP_WELCOME', fallback='n').lower().strip() == 'y':
         run()
-    else:
+    else:  
         while True:
-            welcome()
+            clear()
             print("1. Start DuoXPy")
             print("2. Settings")
             print()
@@ -470,7 +312,6 @@ def main() -> None:
             else:
                 print("Invalid choice. Please try again.")
                 input("Press Enter to continue.")
-
 
 if __name__ == "__main__":
     main()
