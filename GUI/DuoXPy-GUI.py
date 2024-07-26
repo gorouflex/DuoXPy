@@ -13,7 +13,7 @@ import threading
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(current_dir, 'config.ini')
-VERSION = '2.3.0'
+VERSION = '2.4.0'
 GITHUB_REPO = 'gorouflex/DuoXPy'
 CLI_FILE_PATH = 'CLI/DuoXPy-CLI.py'
 config = configparser.ConfigParser()
