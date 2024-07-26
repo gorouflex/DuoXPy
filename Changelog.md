@@ -1,6 +1,7 @@
 ## [2.4.0]
 
-- Introducing `DuoXPy Discord Edition`, a Discord bot version of `DuoXPy` for everone, require a VPS to run
+- Introducing `DuoXPy Discord Bot Edition`, a Discord bot version of `DuoXPy` for everone, require a VPS to run or something like that
+
 ## [2.3.0]
 
 - Introducing: `DuoXPy GUI Edition`, a friendly user interface of `DuoXPy` for everyone
