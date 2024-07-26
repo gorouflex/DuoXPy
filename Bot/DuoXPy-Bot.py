@@ -5,17 +5,19 @@
 import os
 import json
 import base64
-import requests
+import aiohttp
 from datetime import datetime
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-import aiohttp
 
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+log_channel_id = 123  # Do not use string ' '
+streak_channel_id = 123  # Do not use string ' '
+bot_token = 'insert token here' # use string ' '
 
 def decode_jwt(jwt):
     _, payload, _ = jwt.split('.')
@@ -126,16 +128,25 @@ async def process_duolingo(interaction: discord.Interaction, lessons: int):
                 async with session.put(update_url, headers=headers, json=update_payload) as response:
                     update_response = await response.json()
                 xp += update_response['xpGain']
-            
-            channel = bot.get_channel(1261239245415120936)
-            embed = discord.Embed(
-                title="Duolingo XP Update",
-                description=f"{interaction.user.mention} You won {xp} XP!",
-                color=0x90EE90  # Light green color
-            )
-            if channel:
-                await channel.send(embed=embed)
-            await interaction.followup.send(embed=embed)
+
+            # Send message to channel or DM based on interaction context
+            if interaction.guild:
+                channel = bot.get_channel(log_channel_id)
+                if channel:
+                    embed = discord.Embed(
+                        title="Duolingo XP Update",
+                        description=f"{interaction.user.mention} You has been awarded {xp} XP!",
+                        color=0x90EE90  # Light green color
+                    )
+                    await channel.send(embed=embed)
+                await interaction.followup.send(f"Done, please check <#{log_channel_id}>", ephemeral=True)
+            else:
+                embed = discord.Embed(
+                    title="Duolingo XP Update",
+                    description=f"You won {xp} XP!",
+                    color=0x90EE90  # Light green color
+                )
+                await interaction.user.send(embed=embed)
 
         except Exception as error:
             await interaction.followup.send(f"❌ Something went wrong: {str(error)}", ephemeral=True)
@@ -146,7 +157,7 @@ async def start_duolingo(interaction: discord.Interaction, lessons: int):
     await interaction.response.send_message("Processing your request, please wait...", ephemeral=True)
     bot.loop.create_task(process_duolingo(interaction, lessons))
 
-@bot.tree.command(name="donate", description="Send a donation link")
+@bot.tree.command(name="donate", description="Donate us")
 async def donate(interaction: discord.Interaction):
     embed = discord.Embed(
         title="Feel Free To Donate",
@@ -201,7 +212,7 @@ async def find_user(interaction: discord.Interaction, user: discord.User):
 async def streak_saver_task():
     now = datetime.now()
     # Notify that the streak saver function has run
-    channel_status = bot.get_channel(1261239177958264854)
+    channel_status = bot.get_channel(streak_channel_id)
     if channel_status:
         status_embed = discord.Embed(
             title="Streak Saver Task",
@@ -215,6 +226,8 @@ async def test_streaksaver(interaction: discord.Interaction):
     if not any(role.permissions.administrator for role in interaction.user.roles):
         await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
         return
+
+    await interaction.response.send_message("Test streak saver in progress...", ephemeral=True)
 
     accounts = load_accounts()
     async with aiohttp.ClientSession() as session:
@@ -280,7 +293,7 @@ async def test_streaksaver(interaction: discord.Interaction):
                         update_response = await response.json()
                     xp = update_response['xpGain']
                     # Send the result to a specific channel
-                    channel = bot.get_channel(1261239245415120936)
+                    channel = bot.get_channel(log_channel_id)
                     embed = discord.Embed(
                         title="Duolingo XP Update",
                         description=f"<@{user_id}> has been awarded {xp} XP!",
@@ -291,6 +304,6 @@ async def test_streaksaver(interaction: discord.Interaction):
                 except Exception as error:
                     print(f"Error processing user {user_id}: {error}")
 
-    await interaction.response.send_message("Test streak saver completed.", ephemeral=True)
+    await interaction.followup.send("Test streak saver completed.", ephemeral=True)
 
-bot.run('bot_token_here')
+bot.run(bot_token)
