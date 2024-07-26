@@ -11,9 +11,9 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='/', intents=intents)
-log_channel_id = 123
-streak_channel_id = 123
-bot_token = 'token_here'
+log_channel_id = logs-chanell-id
+streak_channel_id = streak-chanell-id
+bot_token = 'BOT-TOKEN-HERE'
 
 def decode_jwt(jwt):
     try:
@@ -156,7 +156,7 @@ async def about(interaction: discord.Interaction):
     embed = discord.Embed(
         title="About DuoXPy Discord Bot Edition",
         description=(
-            " Version 2.4.0 Beta 3\n"
+            " Version 2.4.0\n"
             "- Made by Chromeyc and GorouFlex\n"
             "- Source code: [GitHub](https://github.com/gorouflex/DuoXPy/)"
         ),
