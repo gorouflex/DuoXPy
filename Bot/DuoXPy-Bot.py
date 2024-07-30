@@ -407,7 +407,7 @@ async def find_user(interaction: discord.Interaction, user: discord.User):
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@tasks.loop(hours=0.16666667)
+@tasks.loop(hours=23)
 async def streak_saver_task():
     now = datetime.now()
     accounts = load_accounts()
