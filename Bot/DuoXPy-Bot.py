@@ -8,14 +8,39 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 
-VERSION = "2.4.1"
+VERSION = "2.4.2"
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='/', intents=intents)
-log_channel_id = 123  # Logs Channel id Here
-streak_channel_id = 123  # Channel Id Of Streak logs here
-bot_token = 'bot_token'  # Bot Token Here
+log_channel_id = 123 # Logs Chanell
+streak_channel_id = 123 # Streak Notification Chanell
+bot_token = 'Your-Bot-Token-Here' # Bot Token
+
+
+# Define the file path
+SUPERLINKS_FILE = 'superlinks.txt'
+
+# Define the load_superlinks function to read from a file
+def load_superlinks():
+    try:
+        with open(SUPERLINKS_FILE, 'r') as file:
+            links = file.readlines()
+            links = [link.strip() for link in links if link.strip()]
+        return links
+    except FileNotFoundError:
+        print(f"{SUPERLINKS_FILE} not found")
+        return []
+
+# Define the save_superlinks function to write to a file
+def save_superlinks(superlinks):
+    with open(SUPERLINKS_FILE, 'w') as file:
+        for link in superlinks:
+            file.write(f"{link}\n")
+
+# Check if the user has Administrator permission
+def has_admin_permissions(user):
+    return any(role.permissions.administrator for role in user.roles)
 
 def decode_jwt(jwt):
     try:
@@ -208,6 +233,7 @@ async def about(interaction: discord.Interaction):
             f"Version {VERSION}\n"
             "- Made by [Chromeyc](https://github.com/Chromeyc/) and [GorouFlex](https://github.com/gorouflex/)\n"
             "- Source code: [GitHub](https://github.com/gorouflex/DuoXPy/)"
+            "- Website: [Website](https://chromeyc.github.io/Duolingo-XP-Website/)"
         ),
         color=0x90EE90
     )
@@ -522,12 +548,14 @@ async def help_command(interaction: discord.Interaction):
             "**/finduser** - Find a user's Duolingo profile URL\n"
             "**/guidetoken** - Guide on how to use Duolingo JWT token\n"
             "**/help** - List all available commands"
+            "**getsuper** - Get Super Duolingo For Free"
         ),
         color=0x90EE90
     )
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="teststreaksaver", description="Test streak saver for all logged in accounts")
+
+@bot.command(name="teststreaksaver", description="Test streak saver for all logged in accounts")
 async def test_streaksaver(interaction: discord.Interaction):
     if interaction.guild is None:
         await interaction.response.send_message(embed=discord.Embed(
@@ -557,4 +585,47 @@ async def test_streaksaver(interaction: discord.Interaction):
         color=0x90EE90
     ), ephemeral=True)
 
+
+@bot.tree.command(name='listlinks', description='Lists all superlinks')
+async def list_links(interaction: discord.Interaction):
+    if not has_admin_permissions(interaction.user):
+        await interaction.response.send_message("You do not have permission to use this command.")
+        return
+
+    superlinks = load_superlinks()
+    if superlinks:
+        links_list = '\n'.join(superlinks)
+        await interaction.response.send_message(f"Superlinks:\n{links_list}")
+    else:
+        await interaction.response.send_message("No superlinks found.")
+
+@bot.tree.command(name='addlink', description='Adds a new superlink')
+async def add_link(interaction: discord.Interaction, link: str):
+    if not has_admin_permissions(interaction.user):
+        await interaction.response.send_message("You do not have permission to use this command.")
+        return
+
+    superlinks = load_superlinks()
+    if link in superlinks:
+        await interaction.response.send_message("This link is already in the list.")
+        return
+
+    superlinks.append(link)
+    save_superlinks(superlinks)
+    await interaction.response.send_message(f"Added new link: {link}")
+@bot.tree.command(name='getsuper', description='Gets and removes one working superlink')
+async def get_super(interaction: discord.Interaction):
+    superlinks = load_superlinks()
+    
+    if superlinks:
+        # Provide the first link in the list
+        link = superlinks.pop(0)  # Get and remove the first link
+        save_superlinks(superlinks)  # Save the updated list
+        await interaction.response.send_message(f"Here is a superlink: {link}")
+    else:
+        await interaction.response.send_message("No superlinks available.")
+
+
+
+# Start the bot
 bot.run(bot_token)
