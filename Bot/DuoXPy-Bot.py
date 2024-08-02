@@ -19,7 +19,7 @@ bot_token = 'Your-Bot-Token-Here' # Bot Token
 
 
 # Define the file path
-SUPERLINKS_FILE = 'superlinks.txt'
+SUPERLINKS_FILE = 'superlinks.txt' # Superlink File Directory
 
 # Define the load_superlinks function to read from a file
 def load_superlinks():
